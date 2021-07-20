@@ -479,31 +479,61 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 	struct ClientOrderIPv4
 	{
-		const uint64_t ClientNumber = 0;
-		const sockaddr_in ClientAddress = { 0 };
-
 	public:
+		const SOCKET ClientSocket;
+		const uint64_t ClientNumber;
+		const sockaddr_in ClientAddress;
+
 		bool IsConstructionSuccesful = false;
 
-		ClientOrderIPv4(uint64_t ArgClientNumber, sockaddr_in ArgClientAddress) : ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		//For UDP set ArgClientSocket == NULL
+		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv4!");
 			IsConstructionSuccesful = true;
+		}
+
+		~ClientOrderIPv4()
+		{
+			Essenbp::WriteLogToFile("\n Destructing ClientOrderIPv4!");
+			if (IsConstructionSuccesful)
+			{
+				if (ClientSocket != NULL)
+				{
+					closesocket(ClientSocket);
+				}
+				IsConstructionSuccesful = false;
+			}
 		}
 	};
 
 	struct ClientOrderIPv6
 	{
-		const uint64_t ClientNumber = 0;
-		const sockaddr_in6 ClientAddress = { 0 };
-
 	public:
+		const SOCKET ClientSocket;
+		const uint64_t ClientNumber;
+		const sockaddr_in6 ClientAddress;
+
 		bool IsConstructionSuccesful = false;
 
-		ClientOrderIPv6(uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress) : ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		//For UDP set ArgClientSocket == NULL
+		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv6!");
 			IsConstructionSuccesful = true;
+		}
+
+		~ClientOrderIPv6()
+		{
+			Essenbp::WriteLogToFile("\n Destructing ClientOrderIPv6!");
+			if (IsConstructionSuccesful)
+			{
+				if (ClientSocket != NULL)
+				{
+					closesocket(ClientSocket);
+				}
+				IsConstructionSuccesful = false;
+			}
 		}
 	};
 
@@ -517,154 +547,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		uint64_t TotalNumberOfClientsIPv6 = 0;
 
 		bool IsConstructionSuccesful = false;
-		
-		void AddClientIPv4(sockaddr_in ClientAddress, bool& IsSuccessful)
-		{			
-			IsSuccessful = false;
-
-			ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
-			Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 + 1), sizeof(ClientOrderIPv4*), IsSuccessful);
-			if (!IsSuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 + 1) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In AddClientIPv4 In: ClientOrderList!\n");
-			}
-			else
-			{
-				TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] = new ClientOrderIPv4(TotalNumberOfClientsIPv4, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
-				if (TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] == nullptr)
-				{
-					IsSuccessful = false;
-				}
-				else
-				{
-					for (uint64_t i = 0; i < TotalNumberOfClientsIPv4; ++i)
-					{
-						TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[i];
-					}
-
-					free(ListOfClientsIPv4);
-					ListOfClientsIPv4 = TEMPListOfClientsIPv4;
-					TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 + 1;				
-				}
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for TEMPListOfClientsIPv4[" + std::to_string(TotalNumberOfClientsIPv4) + "] in AddClientIPv4 In: ClientOrderList!\n");
-				}
-			}
-		}
-
-		void AddClientIPv6(sockaddr_in6 ClientAddress, bool& IsSuccessful)
-		{
-			IsSuccessful = false;
-
-			ClientOrderIPv6** TEMPListOfClientsIPv6 = nullptr;
-			Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 + 1), sizeof(ClientOrderIPv6*), IsSuccessful);
-			if (!IsSuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 + 1) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In AddClientIPv6 In: ClientOrderList!\n");
-			}
-			else
-			{
-				TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] = new ClientOrderIPv6(TotalNumberOfClientsIPv6, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
-				if (TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] == nullptr)
-				{
-					IsSuccessful = false;
-				}
-				else
-				{
-					for (uint64_t i = 0; i < TotalNumberOfClientsIPv6; ++i)
-					{
-						TEMPListOfClientsIPv6[i] = ListOfClientsIPv6[i];
-					}
-
-					free(ListOfClientsIPv6);
-					ListOfClientsIPv6 = TEMPListOfClientsIPv6;
-					TotalNumberOfClientsIPv6 = TotalNumberOfClientsIPv6 + 1;
-				}
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for TEMPListOfClientsIPv6[" + std::to_string(TotalNumberOfClientsIPv6) + "] in AddClientIPv6 In: ClientOrderList!\n");
-				}
-			}
-		}
-
-		void RemoveClientIPv4(uint64_t ClientNumber, bool& IsSuccessful)
-		{
-			IsSuccessful = false;
-
-			ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
-			Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 - 1), sizeof(ClientOrderIPv4*), IsSuccessful);
-			if (!IsSuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 - 1) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In RemoveClientIPv4 In: ClientOrderList!\n");
-			}
-			else
-			{
-				uint64_t j = 0;
-				for (uint64_t i = 0; i < TotalNumberOfClientsIPv4; ++i)
-				{
-					if (ClientNumber == i)
-					{
-						delete ListOfClientsIPv4[j];
-						j = j + 1;
-					}
-					else
-					{
-						TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[j];
-					}
-					j = j + 1;
-				}
-
-				free(ListOfClientsIPv4);
-				ListOfClientsIPv4 = TEMPListOfClientsIPv4;
-				TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 + 1;
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for TEMPListOfClientsIPv4[" + std::to_string(TotalNumberOfClientsIPv4) + "] in RemoveClientIPv4 In: ClientOrderList!\n");
-				}
-			}
-		}
-
-		void RemoveClientIPv6(uint64_t ClientNumber, bool& IsSuccessful)
-		{
-			IsSuccessful = false;
-
-			ClientOrderIPv6** TEMPListOfClientsIPv6 = nullptr;
-			Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 - 1), sizeof(ClientOrderIPv6*), IsSuccessful);
-			if (!IsSuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 - 1) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In RemoveClientIPv6 In: ClientOrderList!\n");
-			}
-			else
-			{
-				uint64_t j = 0;
-				for (uint64_t i = 0; i < TotalNumberOfClientsIPv6; ++i)
-				{
-					if (ClientNumber == i)
-					{
-						delete ListOfClientsIPv6[j];
-						j = j + 1;
-					}
-					else
-					{
-						TEMPListOfClientsIPv6[i] = ListOfClientsIPv6[j];
-					}
-					j = j + 1;
-				}
-
-				free(ListOfClientsIPv6);
-				ListOfClientsIPv6 = TEMPListOfClientsIPv6;
-				TotalNumberOfClientsIPv6 = TotalNumberOfClientsIPv6 + 1;
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for TEMPListOfClientsIPv6[" + std::to_string(TotalNumberOfClientsIPv6) + "] in RemoveClientIPv6 In: ClientOrderList!\n");
-				}
-			}
-		}
 
 	public:
 		ClientOrderList()
@@ -676,7 +558,251 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			TotalNumberOfClientsIPv4 = 0;
 			TotalNumberOfClientsIPv6 = 0;
 
-			IsConstructionSuccesful = false;
+			IsConstructionSuccesful = true;
+		}
+
+		void AddClientIPv4(SOCKET ClientSocket, sockaddr_in ClientAddress, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
+				Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 + 1), sizeof(ClientOrderIPv4*), IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 + 1) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In AddClientIPv4 In: ClientOrderList!\n");
+				}
+				else
+				{
+					TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+					if (TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] == nullptr)
+					{
+						IsSuccessful = false;
+					}
+					else
+					{
+						for (uint64_t i = 0; i < TotalNumberOfClientsIPv4; ++i)
+						{
+							TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[i];
+						}
+
+						free(ListOfClientsIPv4);
+						ListOfClientsIPv4 = TEMPListOfClientsIPv4;
+						TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 + 1;
+					}
+
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for TEMPListOfClientsIPv4[" + std::to_string(TotalNumberOfClientsIPv4) + "] in AddClientIPv4 In: ClientOrderList!\n");
+					}
+				}
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error AddClientIPv4() Failed in ClientOrderList!");
+			}
+		}
+
+		void AddClientIPv6(SOCKET ClientSocket, sockaddr_in6 ClientAddress, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				ClientOrderIPv6** TEMPListOfClientsIPv6 = nullptr;
+				Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 + 1), sizeof(ClientOrderIPv6*), IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 + 1) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In AddClientIPv6 In: ClientOrderList!\n");
+				}
+				else
+				{
+					TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+					if (TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] == nullptr)
+					{
+						IsSuccessful = false;
+					}
+					else
+					{
+						for (uint64_t i = 0; i < TotalNumberOfClientsIPv6; ++i)
+						{
+							TEMPListOfClientsIPv6[i] = ListOfClientsIPv6[i];
+						}
+
+						free(ListOfClientsIPv6);
+						ListOfClientsIPv6 = TEMPListOfClientsIPv6;
+						TotalNumberOfClientsIPv6 = TotalNumberOfClientsIPv6 + 1;
+					}
+
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for TEMPListOfClientsIPv6[" + std::to_string(TotalNumberOfClientsIPv6) + "] in AddClientIPv6 In: ClientOrderList!\n");
+					}
+				}
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error AddClientIPv6() Failed in ClientOrderList!");
+			}
+		}
+
+		void RemoveClientIPv4(uint64_t ClientNumber, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				if (ClientNumber < TotalNumberOfClientsIPv4)
+				{				
+					ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
+					Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 - 1), sizeof(ClientOrderIPv4*), IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 - 1) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In RemoveClientIPv4 In: ClientOrderList!\n");
+					}
+					else
+					{
+						uint64_t j = 0;
+						for (uint64_t i = 0; j < TotalNumberOfClientsIPv4; ++i)
+						{
+							if (ClientNumber == i)
+							{
+								delete ListOfClientsIPv4[j];
+								j = j + 1;
+							}
+							else
+							{
+								TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[j];
+							}
+							j = j + 1;
+						}
+
+						free(ListOfClientsIPv4);
+						ListOfClientsIPv4 = TEMPListOfClientsIPv4;
+						TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 - 1;
+					}
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in RemoveClientIPv4 In: ClientOrderList!\n");
+				}
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error RemoveClientIPv4() Failed in ClientOrderList!");
+			}
+		}
+
+		void RemoveClientIPv6(uint64_t ClientNumber, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				if (ClientNumber < TotalNumberOfClientsIPv6)
+				{
+					ClientOrderIPv6** TEMPListOfClientsIPv6 = nullptr;
+					Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 - 1), sizeof(ClientOrderIPv6*), IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 - 1) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In RemoveClientIPv6 In: ClientOrderList!\n");
+					}
+					else
+					{
+						uint64_t j = 0;
+						for (uint64_t i = 0; j < TotalNumberOfClientsIPv6; ++i)
+						{
+							if (ClientNumber == i)
+							{
+								delete ListOfClientsIPv6[j];
+								j = j + 1;
+							}
+							else
+							{
+								TEMPListOfClientsIPv6[i] = ListOfClientsIPv6[j];
+							}
+							j = j + 1;
+						}
+
+						free(ListOfClientsIPv6);
+						ListOfClientsIPv6 = TEMPListOfClientsIPv6;
+						TotalNumberOfClientsIPv6 = TotalNumberOfClientsIPv6 - 1;
+					}
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in RemoveClientIPv6 In: ClientOrderList!\n");
+				}
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error RemoveClientIPv6() Failed in ClientOrderList!");
+			}
+		}
+
+		void GetClientIPv4(uint64_t ClientNumber, ClientOrderIPv4** ReturnClientIPv4, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				if (ClientNumber < TotalNumberOfClientsIPv4)
+				{
+					*ReturnClientIPv4 = ListOfClientsIPv4[ClientNumber];
+					IsSuccessful = true;
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in GetClientIPv4 In: ClientOrderList!\n");
+				}
+			}
+		}
+
+		void GetClientIPv6(uint64_t ClientNumber, ClientOrderIPv6** ReturnClientIPv6, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+			}
+			else
+			{
+				if (ClientNumber < TotalNumberOfClientsIPv4)
+				{
+					*ReturnClientIPv6 = ListOfClientsIPv6[ClientNumber];
+					IsSuccessful = true;
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in GetClientIPv6 In: ClientOrderList!\n");
+				}
+			}
 		}
 
 		~ClientOrderList()
@@ -705,6 +831,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	};
 
+	//NOTE: IPv4 List And IPv6 List both has its own client Numbers, Adding Client to IPv4 will not Increase the List of IPv6 and vice-versa
 	struct NetworkWrapper
 	{
 	private:
@@ -715,10 +842,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		sockaddr_in ServerHintIPv4 = { 0 };//This Server or Connecting Server hint
 		sockaddr_in6 ServerHintIPv6 = { 0 };//This Server or Connecting Server hint
 
-		sockaddr_in** ListOfClientsIPv4_OnlyForServer = nullptr;
-		sockaddr_in6** ListOfClientsIPv6_OnlyForServer = nullptr;
-		unsigned int TotalNumberOfClientsIPv4_OnlyForServer = 0;
-		unsigned int TotalNumberOfClientsIPv6_OnlyForServer = 0;
+		ClientOrderList ClientsList;
 
 #ifdef _WIN32
 		DWORD InputTimeOut = 0;//TCP SOCKET InputTimeOut			//NOTE: will reuse this for UDP custom Time out
@@ -728,34 +852,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		unsigned long OutputTimeOut = 0;//TCP SOCKET OutputTimeOut	//NOTE: will reuse this for UDP custom Time out 
 #endif
 
-		bool IsConstructionSuccesful = false;
-
-		void SendDataUDP(sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataUDP(const sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccesful)
 			{
 				Essenbp::WriteLogToFile("\n Error Calling SendDataUDP Without Constructing the struct In: NetworkWrapper!\n");
-			}
-			else
-			{
-				send(SocketIPv4, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0);
-			}
-
-			if (!IsSuccessful)// For the safe of readability
-			{
-				Essenbp::WriteLogToFile("\n Error SendDataUDP Failed In: NetworkWrapper!");
-			}
-		}
-
-		void SendDataTCP(sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
-		{
-			IsSuccessful = false;
-
-			if (!IsConstructionSuccesful)
-			{
-				Essenbp::WriteLogToFile("\n Error Calling SendDataTCP Without Constructing the struct In: NetworkWrapper!\n");
 			}
 			else
 			{
@@ -764,11 +867,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)// For the safe of readability
 			{
-				Essenbp::WriteLogToFile("\n Error SendDataTCP Failed In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error SendDataUDP Failed In: NetworkWrapper!");
 			}
-		}
+		}		
 
-		void SendDataUDP(sockaddr_in6* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataUDP(const sockaddr_in6* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -778,7 +881,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				send(SocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0);
+				sendto(SocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 			}
 
 			if (!IsSuccessful)// For the safe of readability
@@ -787,7 +890,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		void SendDataTCP(sockaddr_in6* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataTCP(const SOCKET* DestinationSOCKET, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -797,7 +900,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				sendto(SocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
+				send(*DestinationSOCKET, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0);
 			}
 
 			if (!IsSuccessful)// For the safe of readability
@@ -807,120 +910,127 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 	public:
+		bool IsConstructionSuccesful = false;
 
-		//For Server And Client
+		//NOTE: If IPv4/IPv6 Is Present And If IPv6/IPv4 is also needed then Run this function
 		void CreateSocket(std::string IPAddress, unsigned int PortNumber, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
 		{
 			IsSuccessful = true;
 			SOCKET* Socketptr = nullptr;
-
-			if (TrueForIPv6FalseForIPv4)
+			if (!IsConstructionSuccesful)
 			{
-				if (SocketIPv6 != NULL)
-				{
-					Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
-					IsSuccessful = false;
-				}
+				Essenbp::WriteLogToFile("\n Error Calling CreateSocket Without Constructing the struct In: NetworkWrapper!\n");
 			}
 			else
 			{
-				if (SocketIPv4 != NULL)
+				if (TrueForIPv6FalseForIPv4)
 				{
-					Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
-					IsSuccessful = false;
-				}
-			}
-
-			if (IsSuccessful)
-			{
-				if (TrueForTCPFalseForUDP)
-				{
-					if (TrueForIPv6FalseForIPv4)
+					if (SocketIPv6 != NULL)
 					{
-						SocketIPv6 = socket(PF_INET6, SOCK_STREAM, 0);
-						Socketptr = &SocketIPv6;
-					}
-					else
-					{
-						SocketIPv4 = socket(PF_INET, SOCK_STREAM, 0);
-						Socketptr = &SocketIPv4;
-					}
-
-					if (*Socketptr == INVALID_SOCKET)
-					{
-						Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-						Socketptr = nullptr;
+						Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
 						IsSuccessful = false;
 					}
 				}
 				else
 				{
-					if (TrueForIPv6FalseForIPv4)
+					if (SocketIPv4 != NULL)
 					{
-						SocketIPv6 = socket(PF_INET6, SOCK_DGRAM, 0);
-						Socketptr = &SocketIPv6;
-					}
-					else
-					{
-						SocketIPv4 = socket(PF_INET, SOCK_DGRAM, 0);
-						Socketptr = &SocketIPv4;
-					}
-
-					if (*Socketptr == INVALID_SOCKET)
-					{
-						Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-						Socketptr = nullptr;
+						Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
 						IsSuccessful = false;
 					}
 				}
 
 				if (IsSuccessful)
 				{
-					if (TrueForIPv6FalseForIPv4)
+					if (TrueForTCPFalseForUDP)
 					{
-						memset(&ServerHintIPv4, 0, sizeof(ServerHintIPv4));
-						ServerHintIPv4.sin_family = PF_INET; // Address format is IPv4
-						ServerHintIPv4.sin_port = htons(PortNumber); // Convert from little to big endian
-						inet_pton(PF_INET, IPAddress.c_str(), &(ServerHintIPv4.sin_addr));
-
-						if (IsServer)
+						if (TrueForIPv6FalseForIPv4)
 						{
-							if (bind(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
-							{
-								Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-								IsSuccessful = false;
-							}
+							SocketIPv6 = socket(PF_INET6, SOCK_STREAM, 0);
+							Socketptr = &SocketIPv6;
 						}
 						else
 						{
-							if (connect(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
-							{
-								Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-								IsSuccessful = false;
-							}
+							SocketIPv4 = socket(PF_INET, SOCK_STREAM, 0);
+							Socketptr = &SocketIPv4;
+						}
+
+						if (*Socketptr == INVALID_SOCKET)
+						{
+							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+							Socketptr = nullptr;
+							IsSuccessful = false;
 						}
 					}
 					else
 					{
-						memset(&ServerHintIPv6, 0, sizeof(ServerHintIPv6));
-						ServerHintIPv6.sin6_family = PF_INET6; // Address format is IPv6
-						ServerHintIPv6.sin6_port = htons(PortNumber); // Convert from little to big endian
-						inet_pton(PF_INET6, IPAddress.c_str(), &(ServerHintIPv6.sin6_addr));
-
-						if (IsServer)
+						if (TrueForIPv6FalseForIPv4)
 						{
-							if (bind(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+							SocketIPv6 = socket(PF_INET6, SOCK_DGRAM, 0);
+							Socketptr = &SocketIPv6;
+						}
+						else
+						{
+							SocketIPv4 = socket(PF_INET, SOCK_DGRAM, 0);
+							Socketptr = &SocketIPv4;
+						}
+
+						if (*Socketptr == INVALID_SOCKET)
+						{
+							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+							Socketptr = nullptr;
+							IsSuccessful = false;
+						}
+					}
+
+					if (IsSuccessful)
+					{
+						if (TrueForIPv6FalseForIPv4)
+						{
+							memset(&ServerHintIPv4, 0, sizeof(ServerHintIPv4));
+							ServerHintIPv4.sin_family = PF_INET; // Address format is IPv4
+							ServerHintIPv4.sin_port = htons(PortNumber); // Convert from little to big endian
+							inet_pton(PF_INET, IPAddress.c_str(), &(ServerHintIPv4.sin_addr));
+
+							if (IsServer)
 							{
-								Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-								IsSuccessful = false;
+								if (bind(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
+							}
+							else
+							{
+								if (connect(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
 							}
 						}
 						else
 						{
-							if (connect(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
+							memset(&ServerHintIPv6, 0, sizeof(ServerHintIPv6));
+							ServerHintIPv6.sin6_family = PF_INET6; // Address format is IPv6
+							ServerHintIPv6.sin6_port = htons(PortNumber); // Convert from little to big endian
+							inet_pton(PF_INET6, IPAddress.c_str(), &(ServerHintIPv6.sin6_addr));
+
+							if (IsServer)
 							{
-								Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
-								IsSuccessful = false;
+								if (bind(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
+							}
+							else
+							{
+								if (connect(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
 							}
 						}
 					}
@@ -943,8 +1053,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				NW_PCheckIfLittleEndian();
 			}
 
+			SocketIPv4 = NULL;
+			SocketIPv6 = NULL;
+			ServerHintIPv4 = { 0 };
+			ServerHintIPv6 = { 0 };
+
 			IsConstructionSuccesful = false;
-			IsSuccessful = true;
+			IsSuccessful = true;			
 
 #ifdef _WIN32
 			// INITIALIZE WINSOCK
@@ -978,12 +1093,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				InputTimeOut = SocketInputTimeoutInSeconds * 1000;//60 Seconds InputTimeOut
 				OutputTimeOut = SocketOutputTimeoutInSeconds * 1000;//60 Seconds OutputTimeOut
 
+				IsConstructionSuccesful = true;//Temp for the CreateSocket Function
 				CreateSocket(IPAddress, PortNumber, TrueForIPv6FalseForIPv4, IsSuccessful);
 			}		
 
 			if (!IsSuccessful)// For the safe of readability
 			{
 				Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
+				IsConstructionSuccesful = false;
 			}
 			else
 			{
@@ -991,21 +1108,86 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}		
 
+		//For Server to Client
+		void SendData(uint64_t ClientNumber, NetworkDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccesful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling SendData Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (!IsServer)
+				{
+					Essenbp::WriteLogToFile("\n Error Trying to Send Data to Client from A Client in SendData In: NetworkWrapper!\n");
+					Essenbp::WriteLogToFile("NOTE: Construct a Server To Send Data to Connected Clients\n");
+				}
+				else
+				{
+					if (TrueForIPv6FalseForIPv4)
+					{
+						ClientOrderIPv6* ClientOrderIPv6prt = nullptr;
+						ClientsList.GetClientIPv6(ClientNumber, &ClientOrderIPv6prt, IsSuccessful);
+						if(IsSuccessful)
+						{
+							if (TrueForTCPFalseForUDP)
+							{
+								SendDataTCP(&(ClientOrderIPv6prt->ClientSocket), DataAndSize, IsSuccessful);
+							}
+							else
+							{
+								SendDataUDP(&(ClientOrderIPv6prt->ClientAddress), DataAndSize, IsSuccessful);
+							}
+						}
+						else
+						{
+							Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in SendData In: NetworkWrapper!");
+						}
+					}
+					else
+					{
+						ClientOrderIPv4* ClientOrderIPv4prt = nullptr;
+						ClientsList.GetClientIPv4(ClientNumber, &ClientOrderIPv4prt, IsSuccessful);
+						if (IsSuccessful)
+						{
+							if (TrueForTCPFalseForUDP)
+							{
+								SendDataTCP(&(ClientOrderIPv4prt->ClientSocket), DataAndSize, IsSuccessful);
+							}
+							else
+							{
+								SendDataUDP(&(ClientOrderIPv4prt->ClientAddress), DataAndSize, IsSuccessful);
+							}
+						}
+						else
+						{
+							Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in SendData In: NetworkWrapper!");
+						}
+					}
+				}
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error SendData Failed In: NetworkWrapper!");
+			}
+		}
+
 		~NetworkWrapper()
 		{
 			Essenbp::WriteLogToFile("\n Destructing NetworkWrapper!");
 			if (IsConstructionSuccesful)
 			{
-				for (int i = 0; i < FunctionsAdded; ++i)
+				if (SocketIPv4 != NULL)
 				{
-					if (OpenCL_KernelFunctions[i] != nullptr)
-					{
-						delete(OpenCL_KernelFunctions[i]);
-						OpenCL_KernelFunctions[i] = nullptr;
-					}
+					closesocket(SocketIPv4);
 				}
-				free(OpenCL_KernelFunctions);
-				OpenCL_KernelFunctions = nullptr;
+				if (SocketIPv6 != NULL)
+				{
+					closesocket(SocketIPv6);
+				}
 				IsConstructionSuccesful = false;
 			}
 		}
