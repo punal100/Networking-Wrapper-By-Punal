@@ -92,7 +92,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			IsSuccessful = true;
 		}
 
-		if (!IsSuccessful)// For the safe of readability
+		if (!IsSuccessful)
 		{
 			Essenbp::WriteLogToFile("\n Error GetAddrInfoFromHostNameIPV4() Failed in NW_P!\n");
 		}
@@ -125,7 +125,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			IsSuccessful = true;
 		}
 
-		if (!IsSuccessful)// For the safe of readability
+		if (!IsSuccessful)
 		{
 			Essenbp::WriteLogToFile("\n Error GetAddrInfoFromHostNameIPV6() Failed in NW_P!\n");
 		}
@@ -333,6 +333,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		unsigned int TotalNumberOfNetworkData = 0;
 		NetworkDataAndSizeStruct** ArrayOfNetworkData = nullptr;
 
+	public:
 		void ResizeArray(unsigned int TotalNumber, bool& Issuccessful)
 		{
 			Issuccessful = false;
@@ -389,8 +390,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 		}
-
-	public:
+	
 		ArrayOfNetworkDataAndSize()
 		{
 			Essenbp::WriteLogToFile("\n Constructing ArrayOfNetworkDataAndSize!");
@@ -486,13 +486,107 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const uint64_t ClientNumber;
 		const sockaddr_in ClientAddress;
 
+		ArrayOfNetworkDataAndSize SentPackets;
+		ArrayOfNetworkDataAndSize ReceivedPackets;
+		uint8_t SentCount = 0;//		NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
+		uint8_t ReceivedCount = 0;//	NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
+
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress, uint8_t SentPacketsArchiveSize, uint8_t ReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv4!");
-			IsConstructionSuccessful = true;
+			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed ClientOrderIPv4!");
+			}
+			else
+			{
+				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
+				if (!IsConstructionSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed ClientOrderIPv4!");
+				}
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed ClientOrderIPv4!");
+			}
+		}
+
+		void AddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: ClientOrderIPv4!\n");
+			}
+			else
+			{
+				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: ClientOrderIPv4!");
+				}
+				else
+				{
+					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: ClientOrderIPv4!");
+					}
+					else
+					{
+						SentCount = SentCount + 1;
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv4!");
+			}
+		}
+
+		void AddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: ClientOrderIPv4!\n");
+			}
+			else
+			{
+				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: ClientOrderIPv4!");
+				}
+				else
+				{
+					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: ClientOrderIPv4!");
+					}
+					else
+					{
+						ReceivedCount = ReceivedCount + 1;
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv4!");
+			}
 		}
 
 		~ClientOrderIPv4()
@@ -516,13 +610,107 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const uint64_t ClientNumber;
 		const sockaddr_in6 ClientAddress;
 
+		ArrayOfNetworkDataAndSize SentPackets;
+		ArrayOfNetworkDataAndSize ReceivedPackets;
+		uint8_t SentCount = 0;//		NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
+		uint8_t ReceivedCount = 0;//	NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
+
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress, uint8_t SentPacketsArchiveSize, uint8_t ReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv6!");
-			IsConstructionSuccessful = true;
+			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed ClientOrderIPv6!");
+			}
+			else
+			{
+				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
+				if (!IsConstructionSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed ClientOrderIPv6!");
+				}
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed ClientOrderIPv6!");
+			}
+		}
+
+		void AddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: ClientOrderIPv6!\n");
+			}
+			else
+			{
+				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: ClientOrderIPv6!");
+				}
+				else
+				{
+					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: ClientOrderIPv6!");
+					}
+					else
+					{
+						SentCount = SentCount + 1;
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv6!");
+			}
+		}
+
+		void AddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: ClientOrderIPv6!\n");
+			}
+			else
+			{
+				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: ClientOrderIPv6!");
+				}
+				else
+				{
+					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: ClientOrderIPv6!");
+					}
+					else
+					{
+						ReceivedCount = ReceivedCount + 1;
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv6!");
+			}
 		}
 
 		~ClientOrderIPv6()
@@ -663,7 +851,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error AddClientIPv4() Failed in ClientOrderList!");
 			}
@@ -758,7 +946,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error AddClientIPv6() Failed in ClientOrderList!");
 			}
@@ -882,7 +1070,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error RemoveClientIPv4() Failed in ClientOrderList!");
 			}
@@ -1005,7 +1193,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error RemoveClientIPv6() Failed in ClientOrderList!");
 			}
@@ -1095,6 +1283,20 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	struct NetworkWrapper
 	{
 	private:
+#ifdef _WIN32
+		DWORD InputTimeOut = 0;//TCP SOCKET InputTimeOut			//NOTE: will reuse this for UDP custom Time out
+		DWORD OutputTimeOut = 0;//TCP SOCKET OutputTimeOut			//NOTE: will reuse this for UDP custom Time out
+#else
+		unsigned long InputTimeOut = 0;//TCP SOCKET InputTimeOut	//NOTE: will reuse this for UDP custom Time out
+		unsigned long OutputTimeOut = 0;//TCP SOCKET OutputTimeOut	//NOTE: will reuse this for UDP custom Time out 
+#endif
+		int MaximumBackLogConnectionsTCP = 5;//						//NOTE: Maximum Number Of TCP Connections That can be Queued At a time
+		uint8_t SentPacketsArchiveSize = 128;//						//NOTE: Previous Sent Packets Is Stored(For Each Client)
+		uint8_t ReceivedPacketsArchiveSize = 128;//						//NOTE: Previous Sent Packets Is Stored(For Each Client)
+
+		std::atomic_bool IsProcessingData = false;
+		std::atomic_bool IsChangingClientOrder = false;
+
 		const bool IsServer;
 		const bool TrueForTCPFalseForUDP;
 		SOCKET SocketIPv4 = NULL;
@@ -1104,14 +1306,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		ClientOrderList* ClientsList;
 
-#ifdef _WIN32
-		DWORD InputTimeOut = 0;//TCP SOCKET InputTimeOut			//NOTE: will reuse this for UDP custom Time out
-		DWORD OutputTimeOut = 0;//TCP SOCKET OutputTimeOut			//NOTE: will reuse this for UDP custom Time out
-#else
-		unsigned long InputTimeOut = 0;//TCP SOCKET InputTimeOut	//NOTE: will reuse this for UDP custom Time out
-		unsigned long OutputTimeOut = 0;//TCP SOCKET OutputTimeOut	//NOTE: will reuse this for UDP custom Time out 
-#endif
-		int MaximumBackLogConnectionsTCP = 5;
 
 		void SendDataUDP(const sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
@@ -1126,7 +1320,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				sendto(SocketIPv4, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error SendDataUDP Failed In: NetworkWrapper!");
 			}
@@ -1145,7 +1339,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				sendto(SocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error SendDataUDP Failed In: NetworkWrapper!");
 			}
@@ -1164,7 +1358,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				send(*DestinationSOCKET, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0);
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error SendDataTCP Failed In: NetworkWrapper!");
 			}
@@ -1298,14 +1492,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error CreateSocket Failed In: NetworkWrapper!");
 			}
 		}
 
 		//For Server And Client
-		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint8_t ArgSentPacketsArchiveSize = 128, uint8_t ArgReceivedPacketsArchiveSize = 128) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
 
@@ -1345,8 +1539,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				return;
 			}
 			/*------------------------------------------------------------------------------------------------------------------*/
-#endif
-			MaximumBackLogConnectionsTCP = ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP;//Does not Matter for UDP
+#endif			
 			ClientsList = new ClientOrderList(MaximumUnusedClientSpots);
 			if (ClientsList == nullptr)
 			{
@@ -1360,12 +1553,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 				InputTimeOut = SocketInputTimeoutInSeconds * 1000;//60 Seconds InputTimeOut
 				OutputTimeOut = SocketOutputTimeoutInSeconds * 1000;//60 Seconds OutputTimeOut
+				MaximumBackLogConnectionsTCP = ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP;//Does not Matter for UDP
+				SentPacketsArchiveSize = ArgSentPacketsArchiveSize;
+				ReceivedPacketsArchiveSize = ArgReceivedPacketsArchiveSize;
 
 				IsConstructionSuccessful = true;//Temp for the CreateSocket Function
 				CreateSocket(IPAddress, PortNumber, TrueForIPv6FalseForIPv4, IsSuccessful);
 			}		
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
 				IsConstructionSuccessful = false;
@@ -1376,25 +1572,25 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}		
 
-		void ReceiveDataThreadIPv4TCP(ClientOrderIPv4 ClientInfo)
+		void ReceiveDataThreadIPv4TCP(ClientOrderIPv4* ClientInfo)
 		{
-			int ClientLength = sizeof(ClientInfo.ClientAddress); // The size of the client information	
+			int ClientLength = sizeof(ClientInfo->ClientAddress); // The size of the client information	
 			char ReceivedData[VARIABLESIZESETNOW];//128 Is Not Fully Used// 0 is Checknumber(>20 means Ability Casting or interactions) (0-5)6 Char(1Byte x  6) Per Client For Movement And Ability/Action Selection, The Remaining (6-11)6 Char(1Byte x  6) Is For Location			
 
-			setsockopt(ClientInfo.ClientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&InputTimeOut, sizeof(InputTimeOut));
-			setsockopt(ClientInfo.ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
+			setsockopt(ClientInfo->ClientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&InputTimeOut, sizeof(InputTimeOut));
+			setsockopt(ClientInfo->ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
 
 			// Initial Check
 			int is_received = 0;
 			memset(&ReceivedData, 0, sizeof(ReceivedData)); // Clear the receive Buffer(ReceivedDatafer)			
-			is_received = recvfrom(ClientInfo.ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo.ClientAddress, &ClientLength);
+			is_received = recvfrom(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo->ClientAddress, &ClientLength);
 
 			if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
 			{
 				Essenbp::WriteLogToFile("Error No Data Received From recvfrom() in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
 				Essenbp::WriteLogToFile("\n Error recvfrom() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
 				bool IsSuccessful = false;
-				ClientsList->RemoveClientIPv4(ClientInfo.ClientNumber, IsSuccessful);
+				ClientsList->RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);
 				if (!IsSuccessful)
 				{
 					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
@@ -1406,7 +1602,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			{
 				is_received = 0;
 				memset(&ReceivedData, 0, sizeof(ReceivedData)); // Clear the receive Buffer(ReceivedDatafer)			
-				is_received = recvfrom(ClientInfo.ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo.ClientAddress, &ClientLength);
+				is_received = recvfrom(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo.ClientAddress, &ClientLength);
 
 				while (!ContinueInputThread)//PENDING Set Atomic Boolean
 				{
@@ -1419,7 +1615,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					Essenbp::WriteLogToFile("Error No Data Received From recvfrom() in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
 					Essenbp::WriteLogToFile("\n Error recvfrom() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
 					bool IsSuccessful = false;
-					ClientsList->RemoveClientIPv4(ClientInfo.ClientNumber, IsSuccessful);
+					ClientsList->RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);
 					if (!IsSuccessful)
 					{
 						Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
@@ -1499,14 +1695,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							}
 							else
 							{
-								std::thread(ReceiveDataThreadIPv4TCP, *ClientInfo).detach();// Seperate Independent Thread No Outside Connection
+								std::thread(ReceiveDataThreadIPv4TCP, ClientInfo).detach();// Seperate Independent Thread No Outside Connection
 							}
 						}
 					}
 				}				
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error ListenForTCPConnectionIPv4 Failed In: NetworkWrapper!");
 			}
@@ -1573,7 +1769,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 
-			if (!IsSuccessful)// For the safe of readability
+			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error SendData Failed In: NetworkWrapper!");
 			}
