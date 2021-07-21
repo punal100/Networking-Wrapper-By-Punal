@@ -24,7 +24,9 @@ Information About This Wrapper:
 #ifndef NETWORKING_WRAPPER_BY_PUNAL
 #define NETWORKING_WRAPPER_BY_PUNAL
 
-#include "Essenbp.h"//Helper Functions and Struct By Punal
+#include <thread>//		Multi Threading
+#include <atomic>//		Threading Helper
+#include "Essenbp.h"//	Helper Functions and Struct By Punal
 
 #ifdef _WIN32
 #define NOMINMAX // For std::min/max is already there. This macro helps to counter it
@@ -617,6 +619,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								TotalNumberOfUnusedClientSpotIPv4 = TotalNumberOfUnusedClientSpotIPv4 - 1;
 								for (uint64_t i = 0; i < TotalNumberOfUnusedClientSpotIPv4; ++i)
 								{
+									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv4[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv4 - 1)
+									//But Evrything is Correct here? Buffer overrun is impossible!
 									TEMPUnusedClientpotIPv4[i] = UnusedClientpotIPv4[i];
 								}
 								free(UnusedClientpotIPv4);
@@ -710,6 +714,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								TotalNumberOfUnusedClientSpotIPv6 = TotalNumberOfUnusedClientSpotIPv6 - 1;
 								for (uint64_t i = 0; i < TotalNumberOfUnusedClientSpotIPv6; ++i)
 								{
+									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv6[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv6 - 1)
+									//But Evrything is Correct here? Buffer overrun is impossible!
 									TEMPUnusedClientpotIPv6[i] = UnusedClientpotIPv6[i];
 								}
 								free(UnusedClientpotIPv6);
@@ -777,6 +783,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 					else
 					{
+						if (ListOfClientsIPv4[ClientNumber]->ClientSocket != NULL)
+						{
+							closesocket(ListOfClientsIPv4[ClientNumber]->ClientSocket);
+						}
 						delete ListOfClientsIPv4[ClientNumber];
 						ListOfClientsIPv4[ClientNumber] = nullptr;
 						uint64_t* TEMPUnusedClientpotIPv4 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv4 + 1);
@@ -800,6 +810,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								}
 								else
 								{
+									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv4[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv4 + 1)
+									//But Evrything is Correct here? Buffer overrun is impossible!
 									TEMPUnusedClientpotIPv4[i] = UnusedClientpotIPv4[i];
 								}
 							}
@@ -895,6 +907,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 					else
 					{
+						if (ListOfClientsIPv6[ClientNumber]->ClientSocket != NULL)
+						{
+							closesocket(ListOfClientsIPv6[ClientNumber]->ClientSocket);
+						}
 						delete ListOfClientsIPv6[ClientNumber];
 						uint64_t* TEMPUnusedClientpotIPv6 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv6 + 1);
 						if (TEMPUnusedClientpotIPv6 == nullptr)
@@ -917,6 +933,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								}
 								else
 								{
+									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv6[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv6 + 1)
+									//But Evrything is Correct here? Buffer overrun is impossible!
 									TEMPUnusedClientpotIPv6[i] = UnusedClientpotIPv6[i];
 								}
 							}
@@ -1037,6 +1055,16 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		uint64_t GetTotalNumberOfIPv4Clients()
+		{
+			return TotalNumberOfClientsIPv4;
+		}
+
+		uint64_t GetTotalNumberOfIPv6Clients()
+		{
+			return TotalNumberOfClientsIPv6;
+		}
+
 		~ClientOrderList()
 		{
 			Essenbp::WriteLogToFile("\n Destructing ClientOrderList!");
@@ -1083,6 +1111,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		unsigned long InputTimeOut = 0;//TCP SOCKET InputTimeOut	//NOTE: will reuse this for UDP custom Time out
 		unsigned long OutputTimeOut = 0;//TCP SOCKET OutputTimeOut	//NOTE: will reuse this for UDP custom Time out 
 #endif
+		int MaximumBackLogConnectionsTCP = 5;
 
 		void SendDataUDP(const sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
@@ -1276,7 +1305,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//For Server And Client
-		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
 
@@ -1317,7 +1346,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			/*------------------------------------------------------------------------------------------------------------------*/
 #endif
-
+			MaximumBackLogConnectionsTCP = ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP;//Does not Matter for UDP
 			ClientsList = new ClientOrderList(MaximumUnusedClientSpots);
 			if (ClientsList == nullptr)
 			{
@@ -1346,6 +1375,142 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				IsConstructionSuccessful = true;
 			}
 		}		
+
+		void ReceiveDataThreadIPv4TCP(ClientOrderIPv4 ClientInfo)
+		{
+			int ClientLength = sizeof(ClientInfo.ClientAddress); // The size of the client information	
+			char ReceivedData[VARIABLESIZESETNOW];//128 Is Not Fully Used// 0 is Checknumber(>20 means Ability Casting or interactions) (0-5)6 Char(1Byte x  6) Per Client For Movement And Ability/Action Selection, The Remaining (6-11)6 Char(1Byte x  6) Is For Location			
+
+			setsockopt(ClientInfo.ClientSocket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&InputTimeOut, sizeof(InputTimeOut));
+			setsockopt(ClientInfo.ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
+
+			// Initial Check
+			int is_received = 0;
+			memset(&ReceivedData, 0, sizeof(ReceivedData)); // Clear the receive Buffer(ReceivedDatafer)			
+			is_received = recvfrom(ClientInfo.ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo.ClientAddress, &ClientLength);
+
+			if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+			{
+				Essenbp::WriteLogToFile("Error No Data Received From recvfrom() in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error recvfrom() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+				bool IsSuccessful = false;
+				ClientsList->RemoveClientIPv4(ClientInfo.ClientNumber, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+				}
+				return;
+			}
+
+			while (true)
+			{
+				is_received = 0;
+				memset(&ReceivedData, 0, sizeof(ReceivedData)); // Clear the receive Buffer(ReceivedDatafer)			
+				is_received = recvfrom(ClientInfo.ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientInfo.ClientAddress, &ClientLength);
+
+				while (!ContinueInputThread)//PENDING Set Atomic Boolean
+				{
+					std::cout << '\n' << "Continue Input Thread is Executed ";
+					//Infinite Loop here when ServerInputIsPaused
+				}
+
+				if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+				{
+					Essenbp::WriteLogToFile("Error No Data Received From recvfrom() in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+					Essenbp::WriteLogToFile("\n Error recvfrom() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+					bool IsSuccessful = false;
+					ClientsList->RemoveClientIPv4(ClientInfo.ClientNumber, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+					}
+					return;
+				}
+
+				//PENDING Set Message buffer
+
+				//memset(&ConvertedData, 0, sizeof(ConvertedData));
+				ConvertedData = SocketCharDataToASCII(ReceivedData, sizeof(ReceivedData));
+				OurReturnValue = DetermineTypeOfCommandFromClientAndProcessThem(ClientSocket, Client, ConvertedData, MultipurposeVariable, ClientNumberInServer);// This is the Functions which Determines what the Command is Then Processes
+				if (OurReturnValue > 1)// 0 is Unrecognized, 1 is Automated, From 2 and so on Return Value is Valid
+				{
+					CharactersInServer[ClientNumberInServer].ClientDataSendPendingCommand.push_back(OurReturnValue);
+				}
+			}
+		}
+
+		//This Thread will be Run by Default for TCP And Will Close when Struct Destructs
+		void ListenForTCPConnectionIPv4()
+		{
+			bool IsSuccessful = true;
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling ListenForTCPConnectionIPv4 Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (!IsServer)
+				{
+					Essenbp::WriteLogToFile("\n Error Trying to Listen For Incomming Client from A Client in ListenForTCPConnectionIPv4 In: NetworkWrapper!\n");
+					Essenbp::WriteLogToFile("NOTE: Construct a Server To Send Data to Connected Clients\n");
+				}
+				else
+				{
+					ClientOrderIPv4* ClientInfo;
+					SOCKET ClientSocket;
+					sockaddr_in ClientAddress;
+					int ClientAdderStructLength = sizeof(ClientAddress);
+					while (true)
+					{
+						// Wait for message
+						listen(SocketIPv4, MaximumBackLogConnectionsTCP);
+						ClientSocket = accept(SocketIPv4, (sockaddr*)&ClientAddress, &ClientAdderStructLength);
+
+						if (WSAGetLastError() > 0)
+						{
+							Essenbp::WriteLogToFile("\n Error accept() Failed with Error " + std::to_string(WSAGetLastError()) + " in ListenForTCPConnectionIPv4 In: NetworkWrapper!");
+							continue;
+						}
+
+						ClientsList->AddClientIPv4(ClientSocket, ClientAddress, IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error ClientList::AddClientIPv4 Failed in ListenForTCPConnectionIPv4 In: NetworkWrapper!");
+							if (ClientSocket != NULL)
+							{
+								closesocket(ClientSocket);
+							}
+						}
+						else
+						{
+							ClientsList->GetClientIPv4((ClientsList->GetTotalNumberOfIPv4Clients() - 1), &ClientInfo, IsSuccessful);
+							if (!IsSuccessful)
+							{								
+								Essenbp::WriteLogToFile("\n Error ClientList::AddClientIPv4 Failed in ListenForTCPConnectionIPv4 In: NetworkWrapper!");
+								ClientsList->RemoveClientIPv4((ClientsList->GetTotalNumberOfIPv4Clients() - 1), IsSuccessful);
+								if (!IsSuccessful)
+								{
+									Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ListenForTCPConnectionIPv4 In: NetworkWrapper!");
+									if (ClientSocket != NULL)
+									{
+										closesocket(ClientSocket);
+									}
+								}
+							}
+							else
+							{
+								std::thread(ReceiveDataThreadIPv4TCP, *ClientInfo).detach();// Seperate Independent Thread No Outside Connection
+							}
+						}
+					}
+				}				
+			}
+
+			if (!IsSuccessful)// For the safe of readability
+			{
+				Essenbp::WriteLogToFile("\n Error ListenForTCPConnectionIPv4 Failed In: NetworkWrapper!");
+			}
+		}
 
 		//For Server to Client
 		void SendData(uint64_t ClientNumber, NetworkDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
