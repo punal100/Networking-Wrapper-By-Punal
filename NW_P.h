@@ -485,6 +485,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const SOCKET ClientSocket;
 		const uint64_t ClientNumber;
 		const sockaddr_in ClientAddress;
+		const uint8_t SentPacketsArchiveSize;
+		const uint8_t ReceivedPacketsArchiveSize;
 
 		ArrayOfNetworkDataAndSize SentPackets;
 		ArrayOfNetworkDataAndSize ReceivedPackets;
@@ -494,7 +496,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress, uint8_t SentPacketsArchiveSize, uint8_t ReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress, uint8_t ArgSentPacketsArchiveSize, uint8_t ArgReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv4!");
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
@@ -609,6 +611,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const SOCKET ClientSocket;
 		const uint64_t ClientNumber;
 		const sockaddr_in6 ClientAddress;
+		const uint8_t SentPacketsArchiveSize;
+		const uint8_t ReceivedPacketsArchiveSize;
 
 		ArrayOfNetworkDataAndSize SentPackets;
 		ArrayOfNetworkDataAndSize ReceivedPackets;
@@ -618,7 +622,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress, uint8_t SentPacketsArchiveSize, uint8_t ReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress)
+		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress, uint8_t ArgSentPacketsArchiveSize, uint8_t ArgReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv6!");
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
@@ -737,6 +741,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		uint64_t TotalNumberOfClientsIPv6 = 0;
 
 		const uint64_t MaximumUnusedSpots = 0;//Default is 2048, If there are More than or Equal to 2048 Spots free spots the entire ClintOrderList will be Reordered...
+		const uint8_t SentPacketsArchiveSize;
+		const uint8_t ReceivedPacketsArchiveSize;
+
 		uint64_t* UnusedClientpotIPv4 = nullptr;
 		uint64_t* UnusedClientpotIPv6 = nullptr;
 		uint64_t TotalNumberOfUnusedClientSpotIPv4 = 0;
@@ -745,7 +752,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		bool IsConstructionSuccessful = false;
 
 	public:
-		ClientOrderList(uint64_t ArgMaximumUnusedSpots) : MaximumUnusedSpots(ArgMaximumUnusedSpots)
+		ClientOrderList(uint64_t ArgMaximumUnusedSpots, uint8_t ArgSentPacketsArchiveSize, uint8_t ArgReceivedPacketsArchiveSize) : MaximumUnusedSpots(ArgMaximumUnusedSpots), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
 			Essenbp::WriteLogToFile("\n Constructing ClientOrderList!");
 
@@ -776,7 +783,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (TotalNumberOfClientsIPv4 == 1)
 					{
-						ListOfClientsIPv4[0] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+						ListOfClientsIPv4[0] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 						if (ListOfClientsIPv4[0] == nullptr)
 						{
 							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for ListOfClientsIPv4[0] in AddClientIPv4 In: ClientOrderList!\n");
@@ -797,7 +804,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						}
 						else
 						{
-							ListOfClientsIPv4[UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+							ListOfClientsIPv4[UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 							if (ListOfClientsIPv4[UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]] == nullptr)
 							{
 								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for ListOfClientsIPv4[" + std::to_string(UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]) + "] in AddClientIPv4 In: ClientOrderList!\n");
@@ -827,7 +834,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+					TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 					if (TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] == nullptr)
 					{
 						IsSuccessful = false;
@@ -871,7 +878,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (TotalNumberOfClientsIPv6 == 1)
 					{
-						ListOfClientsIPv6[0] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+						ListOfClientsIPv6[0] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 						if (ListOfClientsIPv6[0] == nullptr)
 						{
 							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for ListOfClientsIPv6[0] in AddClientIPv6 In: ClientOrderList!\n");
@@ -892,7 +899,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						}
 						else
 						{
-							ListOfClientsIPv6[UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+							ListOfClientsIPv6[UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 							if (ListOfClientsIPv6[UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]] == nullptr)
 							{
 								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for ListOfClientsIPv6[" + std::to_string(UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]) + "] in AddClientIPv6 In: ClientOrderList!\n");
@@ -922,7 +929,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
+					TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccesful Constrction check as it is not needed in this simple struct
 					if (TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] == nullptr)
 					{
 						IsSuccessful = false;
@@ -1292,7 +1299,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 #endif
 		int MaximumBackLogConnectionsTCP = 5;//						//NOTE: Maximum Number Of TCP Connections That can be Queued At a time
 		uint8_t SentPacketsArchiveSize = 128;//						//NOTE: Previous Sent Packets Is Stored(For Each Client)
-		uint8_t ReceivedPacketsArchiveSize = 128;//						//NOTE: Previous Sent Packets Is Stored(For Each Client)
+		uint8_t ReceivedPacketsArchiveSize = 128;//					//NOTE: Previous Sent Packets Is Stored(For Each Client)
 
 		std::atomic_bool IsProcessingData = false;
 		std::atomic_bool IsChangingClientOrder = false;
@@ -1499,7 +1506,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//For Server And Client
-		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint8_t ArgSentPacketsArchiveSize = 128, uint8_t ArgReceivedPacketsArchiveSize = 128) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+		NetworkWrapper(std::string IPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, uint8_t ArgSentPacketsArchiveSize = 128, uint8_t ArgReceivedPacketsArchiveSize = 128, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
 
@@ -1540,7 +1547,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			/*------------------------------------------------------------------------------------------------------------------*/
 #endif			
-			ClientsList = new ClientOrderList(MaximumUnusedClientSpots);
+			ClientsList = new ClientOrderList(MaximumUnusedClientSpots, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);
 			if (ClientsList == nullptr)
 			{
 				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderList)) + " Byes Of Memory for ClientsList in AddClientIPv6 In: NetworkWrapper!\n");
