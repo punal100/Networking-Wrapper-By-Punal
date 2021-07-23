@@ -191,7 +191,7 @@ namespace Essenbp//Essential Functions By Punal
 
 	//NOTE: Data Starts from 0
 	//NOTE: Max Size is From = 0, To = SizeOfData - 1
-	void ReverseDataOrder(void* Data, size_t From, size_t To, bool IsSuccessful)
+	void ReverseDataOrder(void* Data, size_t From, size_t To, bool& IsSuccessful)
 	{
 		IsSuccessful = false;
 		if (Data == nullptr)
@@ -348,12 +348,12 @@ namespace Essenbp//Essential Functions By Punal
 		void FreeAndResizeData(size_t ArgSizeOfData, bool& Issuccessful)
 		{
 			Issuccessful = false;
-			FreeData();
-			if (SizeOfData == 0)
+			if (ArgSizeOfData == 0)
 			{
 				WriteLogToFile("\n Error Size Of SizeOfData is Equal to Zero in FreeAndResizeDataAndReturnPointerToDataPointer in UnknownDataAndSizeStruct In: Essenbp!\n");
 				return;
 			}
+			FreeData();
 			Data = malloc(ArgSizeOfData);
 			if (Data == nullptr)
 			{
