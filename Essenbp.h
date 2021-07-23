@@ -2,6 +2,7 @@
 
 #ifndef ESSENTIAL_FUNCTIONS_BY_PUNAL
 #define ESSENTIAL_FUNCTIONS_BY_PUNAL
+#define ESSENTIAL_FUNCTIONS_BY_PUNAL_VERSION_2
 
 #include <string>
 #include <fstream>// For file reading
@@ -185,6 +186,39 @@ namespace Essenbp//Essential Functions By Punal
 		else
 		{
 			AppendToTextFile(CurrentDirectory, WhatToWrite, TempBool);
+		}
+	}
+
+	//NOTE: Data Starts from 0
+	//NOTE: Max Size is From = 0, To = SizeOfData - 1
+	void ReverseDataOrder(void* Data, size_t From, size_t To, bool IsSuccessful)
+	{
+		IsSuccessful = false;
+		if (Data == nullptr)
+		{
+			Essenbp::WriteLogToFile("\n Error Data is nullptr in ReverseDataOrder In: Essenbp!\n");
+		}
+		else
+		{
+			if (From > To)
+			{
+				Essenbp::WriteLogToFile("\n Error From Is greater than To in ReverseDataOrder In: Essenbp!\n");
+			}
+			else
+			{
+				size_t Max = (To - From) + 1;
+				Max = Max / 2 + (Max % 2);
+				char Swap = 'a';
+				for (size_t i = 0; i < Max; ++i)
+				{
+					Swap = ((char*)Data)[From];
+					((char*)Data)[From] = ((char*)Data)[To];
+					((char*)Data)[To] = Swap;
+					From = From + 1;
+					To = To - 1;
+				}
+				IsSuccessful = true;
+			}
 		}
 	}
 
