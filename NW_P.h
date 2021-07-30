@@ -1379,14 +1379,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//NOTE: This checks if the sender is in List, and has given correct ClientUniqueID[8 to 15] ("Password" Randomly Generated upon successful connection to The server)
 		//NOTE: Received_SizeOfData is the Size of the Data(Designated by the Server/Client) Carried by the Received packet
-		void CheckAndDecryptData(char* ReceivedData, bool TrueForIPv6FalseForIPv4, uint16_t& Received_SizeOfData, bool& IsSuccessful)
+		void CheckReceivedDataInfoServer(char* ReceivedData, bool TrueForIPv6FalseForIPv4, uint16_t& Received_SizeOfData, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling CheckAndDecryptData Without Constructing the struct In: NetworkWrapper!\n");
-				Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error Calling CheckReceivedDataInfoServer Without Constructing the struct In: NetworkWrapper!\n");
+				Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed In: NetworkWrapper!");
 			}
 			else
 			{
@@ -1401,19 +1401,19 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					ClientsList->GetClientIPv6(Received_ClientNumber, &ClientOrderIPv6ptr, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in CheckAndDecryptData In: NetworkWrapper!");
+						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in CheckReceivedDataInfoServer In: NetworkWrapper!");
 					}
 					else
 					{
 						if (Received_ClientUniqueID != ClientOrderIPv6ptr->ClientUniqueID)
 						{
-							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckAndDecryptData In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckReceivedDataInfoServer In: NetworkWrapper!");
 						}
 						else
 						{
 							if (Received_SizeOfData > MaxDataSizePerPacket)
 							{
-								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckAndDecryptData In: NetworkWrapper!");
+								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckReceivedDataInfoServer In: NetworkWrapper!");
 							}
 							else
 							{
@@ -1428,19 +1428,19 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					ClientsList->GetClientIPv4(Received_ClientNumber, &ClientOrderIPv4ptr, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in CheckAndDecryptData In: NetworkWrapper!");
+						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in CheckReceivedDataInfoServer In: NetworkWrapper!");
 					}
 					else
 					{
 						if (Received_ClientUniqueID != ClientOrderIPv4ptr->ClientUniqueID)
 						{
-							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckAndDecryptData In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckReceivedDataInfoServer In: NetworkWrapper!");
 						}
 						else
 						{
 							if (Received_SizeOfData > MaxDataSizePerPacket)
 							{
-								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckAndDecryptData In: NetworkWrapper!");
+								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckReceivedDataInfoServer In: NetworkWrapper!");
 							}
 							else
 							{
@@ -1453,7 +1453,85 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			//if (!IsSuccessful)//NO Need here because This is Received Data From The Internet...  //CHECK PENDING
 			//{
-			//	Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed In: NetworkWrapper!");
+			//	Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed In: NetworkWrapper!");
+			//}
+		}
+
+		void CheckAndGetReceivedDataInfoServer(char* ReceivedData, bool TrueForIPv6FalseForIPv4, uint16_t& Received_SizeOfData, uint64_t& Received_ClientNumber, uint64_t& Received_ClientUniqueID, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling CheckAndGetReceivedDataInfoServer Without Constructing the struct In: NetworkWrapper!\n");
+				Essenbp::WriteLogToFile("\n Error CheckAndGetReceivedDataInfoServer Failed In: NetworkWrapper!");
+			}
+			else
+			{
+				Received_ClientNumber = ntohll(((uint64_t*)ReceivedData)[0]);					// [0] to [7] Char
+				Received_ClientUniqueID = ntohll(((uint64_t*)ReceivedData)[1]);					// [8] to [15] Char
+				Received_SizeOfData = ntohll(((uint16_t*)ReceivedData)[8]);						//[16] to [17] Char
+				//uint16_t Received_NetworkWrapperCommand = ntohll(((uint16_t*)ReceivedData)[9]);	//[18] to [19] Char //NOT NEEDED HERE!
+
+				if (TrueForIPv6FalseForIPv4)
+				{
+					ClientOrderIPv6* ClientOrderIPv6ptr = nullptr;
+					ClientsList->GetClientIPv6(Received_ClientNumber, &ClientOrderIPv6ptr, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+					}
+					else
+					{
+						if (Received_ClientUniqueID != ClientOrderIPv6ptr->ClientUniqueID)
+						{
+							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+						}
+						else
+						{
+							if (Received_SizeOfData > MaxDataSizePerPacket)
+							{
+								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+							}
+							else
+							{
+								IsSuccessful = true;
+							}
+						}
+					}
+				}
+				else
+				{
+					ClientOrderIPv4* ClientOrderIPv4ptr = nullptr;
+					ClientsList->GetClientIPv4(Received_ClientNumber, &ClientOrderIPv4ptr, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+					}
+					else
+					{
+						if (Received_ClientUniqueID != ClientOrderIPv4ptr->ClientUniqueID)
+						{
+							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+						}
+						else
+						{
+							if (Received_SizeOfData > MaxDataSizePerPacket)
+							{
+								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckAndGetReceivedDataInfoServer In: NetworkWrapper!");
+							}
+							else
+							{
+								IsSuccessful = true;
+							}
+						}
+					}
+				}
+			}
+
+			//if (!IsSuccessful)//NO Need here because This is Received Data From The Internet...  //CHECK PENDING
+			//{
+			//	Essenbp::WriteLogToFile("\n Error CheckAndGetReceivedDataInfoServer Failed In: NetworkWrapper!");
 			//}
 		}
 
@@ -1704,7 +1782,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		/****************************************************************************************************************************///PENDING
 		//													/*Server*/
 		//Command = 0, Verify Connection of Client to Server / Disconnect Client from Server
-		void ServerSideConnectionDisconnectionConfirmationTCP(SOCKET ClientSocket, bool& IsSuccessful, uint8_t MaxVerificationTries = 2)
+		void ServerSideConnectionDisconnectionConfirmationTCP(SOCKET ClientSocket, bool& IsSuccessful, bool IsInitialJoin = false, uint8_t MaxVerificationTries = 2)
 		{
 			IsSuccessful = false;
 
@@ -1733,8 +1811,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						//\*((uint16_t*)( SendDataChar + 8 ) ) = 0;				//Not Needed Here
 						*((uint16_t*)( SendDataChar + 16) ) = 4;				//Size
 						*((uint16_t*)( SendDataChar + 18) ) = 2;				//Command
-						*((uint32_t*)( SendDataChar + 20) ) = std::rand();		//Temporary Password To Join Server
-						DataAndSize.CopyAndStoreData(SendDataChar, 16, IsSuccessful);
+						*((uint32_t*)( SendDataChar + 20) ) = std::rand();		//Temporary Password To Join/Exit Server
+						DataAndSize.CopyAndStoreData(SendDataChar, 24, IsSuccessful);
 						if (!IsSuccessful)
 						{
 							Essenbp::WriteLogToFile("\n Error DataAndSize.CopyAndStoreData() Failed in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!\n");
@@ -1783,10 +1861,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								else
 								{		
 									ReceiveData(ClientSocket, ReceivedData, MaxDataSizePerPacket, IsSuccessful);
-									if (!IsSuccessful)
+									if (!IsSuccessful)// When the size is 0
 									{
 										Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!");
-										Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!");
 									}
 									else
 									{
@@ -1794,10 +1871,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 										uint16_t Received_SizeOfData = 0;
 										for (uint8_t i = 0; i < MaxVerificationTries; ++i)
 										{
-											CheckAndDecryptData(ReceivedData, false, Received_SizeOfData, IsSuccessful);
-											if (IsSuccessful)
+											if(!IsInitialJoin)
 											{
-												Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!");
+												IsSuccessful = true;
+											}
+											else
+											{
+												CheckReceivedDataInfoServer(ReceivedData, false, Received_SizeOfData, IsSuccessful);
+											}
+
+											if (!IsSuccessful)
+											{
+												Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!");
 											}
 											else
 											{
@@ -1806,12 +1891,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 												if (IsLittleEndian)
 												{
 													//Checks Not Needed Below Since Correct Values are Inputted
-													Essenbp::ReverseDataOrder((void*)ReceivedData, 0, 7, IsSuccessful);		//Not Needed Here
-													Essenbp::ReverseDataOrder((void*)ReceivedData, 8, 15, IsSuccessful);	//Not Needed Here
+													//Essenbp::ReverseDataOrder((void*)ReceivedData, 0, 7, IsSuccessful);		//Not Needed Here
+													//Essenbp::ReverseDataOrder((void*)ReceivedData, 8, 15, IsSuccessful);	//Not Needed Here
 													Essenbp::ReverseDataOrder((void*)ReceivedData, 16, 18, IsSuccessful);	//Size
 													Essenbp::ReverseDataOrder((void*)ReceivedData, 19, 20, IsSuccessful);	//Command
-													Essenbp::ReverseDataOrder((void*)ReceivedData, 21, 24, IsSuccessful);	//Temporary Password To Join Server
-													Essenbp::ReverseDataOrder((void*)SendDataChar, 21, 24, IsSuccessful);	//Temporary Password To Join Server
+													Essenbp::ReverseDataOrder((void*)ReceivedData, 21, 24, IsSuccessful);	//Temporary Password To Join/Exit Server
 												}
 												if (*((uint16_t*)(ReceivedData + 16)) == 4)//*((uint16_t*)(SendDataChar + 16)))
 												{
@@ -1877,8 +1961,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							//\*((uint16_t*)( SendDataChar + 8 ) ) = 0;				//Not Needed Here
 							*((uint16_t*)(SendDataChar + 16)) = 4;					//Size
 							*((uint16_t*)(SendDataChar + 18)) = 2;					//Command
-							*((uint32_t*)(SendDataChar + 20)) = std::rand();		//Temporary Password To Join Server
-							SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 16, IsSuccessful);
+							*((uint32_t*)(SendDataChar + 20)) = std::rand();		//Temporary Password To Join/Exit Server
+							SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 24, IsSuccessful);
 							if (!IsSuccessful)
 							{
 								Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ServerSideConnectionDisconnectionConfirmationUDP In: NetworkWrapper!\n");
@@ -1925,11 +2009,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						if (IsLittleEndian)
 						{
 							//Checks Not Needed Below Since Correct Values are Inputted
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 0, 7, IsSuccessful);		//Not Needed Here
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 8, 15, IsSuccessful);	//Not Needed Here
+							//Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 0, 7, IsSuccessful);		//Not Needed Here
+							//Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 8, 15, IsSuccessful);	//Not Needed Here
 							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 16, 18, IsSuccessful);	//Size
 							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 19, 20, IsSuccessful);	//Command
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 21, 24, IsSuccessful);	//Temporary Password To Join Server
+							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 21, 24, IsSuccessful);	//Temporary Password To Join/Exit Server
 						}
 						IsSuccessful = false;
 						if (*((uint16_t*)(SentDataOrReceivedData.GetData() + 16)) == 4)//*((uint16_t*)(SendDataChar + 16)))
@@ -1988,8 +2072,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							//\*((uint16_t*)( SendDataChar + 8 ) ) = 0;				//Not Needed Here
 							*((uint16_t*)(SendDataChar + 16)) = 4;					//Size
 							*((uint16_t*)(SendDataChar + 18)) = 2;					//Command
-							*((uint32_t*)(SendDataChar + 20)) = std::rand();		//Temporary Password To Join Server
-							SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 16, IsSuccessful);
+							*((uint32_t*)(SendDataChar + 20)) = std::rand();		//Temporary Password To Join/Exit Server
+							SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 24, IsSuccessful);
 							if (!IsSuccessful)
 							{
 								Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ServerSideConnectionDisconnectionConfirmationUDP In: NetworkWrapper!\n");
@@ -2036,11 +2120,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						if (IsLittleEndian)
 						{
 							//Checks Not Needed Below Since Correct Values are Inputted
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 0, 7, IsSuccessful);		//Not Needed Here
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 8, 15, IsSuccessful);	//Not Needed Here
+							//Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 0, 7, IsSuccessful);		//Not Needed Here
+							//Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 8, 15, IsSuccessful);	//Not Needed Here
 							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 16, 18, IsSuccessful);	//Size
 							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 19, 20, IsSuccessful);	//Command
-							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 21, 24, IsSuccessful);	//Temporary Password To Join Server
+							Essenbp::ReverseDataOrder((void*)SentDataOrReceivedData.GetData(), 21, 24, IsSuccessful);	//Temporary Password To Join/Exit Server
 						}
 						IsSuccessful = false;
 						if (*((uint16_t*)(SentDataOrReceivedData.GetData() + 16)) == 4)//*((uint16_t*)(SendDataChar + 16)))
@@ -2092,78 +2176,64 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				else
 				{
 					NetworkDataAndSizeStruct SentDataOrReceivedData;
-					if (GetTempPassword_or_SendBackTempPassword)
+					char* SendDataChar = (char*)malloc(24);
+					if (SendDataChar == nullptr)
 					{
-						char* SendDataChar = (char*)malloc(24);
-						if (SendDataChar == nullptr)
+						Essenbp::WriteLogToFile("\n Error Allocating 24 Byes Of Memory for SendDataChar in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+					}
+					else
+					{
+						memset(SendDataChar, 0, 24);
+						//\*((uint16_t*)( SendDataChar + 0 ) ) = 0;				//Not Needed Here
+						//\*((uint16_t*)( SendDataChar + 8 ) ) = 0;				//Not Needed Here
+						*((uint16_t*)(SendDataChar + 16)) = 4;					//Size
+						*((uint16_t*)(SendDataChar + 18)) = 2;					//Command
+						if (GetTempPassword_or_SendBackTempPassword)
 						{
-							Essenbp::WriteLogToFile("\n Error Allocating 24 Byes Of Memory for SendDataChar in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+							*((uint32_t*)(SendDataChar + 20)) = 0;//Server Decides	//Temporary Password To Join/Exit Server
 						}
 						else
 						{
-							memset(SendDataChar, 0, 24);
-							//\*((uint16_t*)( SendDataChar + 0 ) ) = 0;				//Not Needed Here
-							//\*((uint16_t*)( SendDataChar + 8 ) ) = 0;				//Not Needed Here
-							*((uint16_t*)(SendDataChar + 16)) = 4;					//Size
-							*((uint16_t*)(SendDataChar + 18)) = 2;					//Command
-							*((uint32_t*)(SendDataChar + 20)) = 0;//Server Decides	//Temporary Password To Join Server
-							SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 16, IsSuccessful);
+							*((uint32_t*)(SendDataChar + 20)) = TempPassword;//Received Temporary Password To Join/Exit Server
+						}
+						SentDataOrReceivedData.CopyAndStoreData(SendDataChar, 16, IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+						}
+						else
+						{
+							SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 16), 2, IsSuccessful, false, true);
 							if (!IsSuccessful)
 							{
 								Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
 							}
 							else
 							{
-								SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 16), 2, IsSuccessful, false, true);
+								SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 18), 2, IsSuccessful, false, true);
 								if (!IsSuccessful)
 								{
 									Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
 								}
 								else
 								{
-									SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 18), 2, IsSuccessful, false, true);
+									SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 20), 4, IsSuccessful, false, true);
 									if (!IsSuccessful)
 									{
 										Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
 									}
 									else
 									{
-										SentDataOrReceivedData.CopyAndStoreData((SendDataChar + 20), 4, IsSuccessful, false, true);
+										SendData(SentDataOrReceivedData, TrueForIPv6FalseForIPv4, IsSuccessful);
 										if (!IsSuccessful)
 										{
-											Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+											Essenbp::WriteLogToFile("\n Error SendData Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
 										}
 									}
 								}
 							}
-							free(SendDataChar);
-
-							if (IsSuccessful)
-							{
-								SentDataOrReceivedData.CopyAndStoreData((void*)&TempPassword, 4, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error SentDataOrReceivedData.CopyAndStoreData() Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
-								}
-								else
-								{
-									SendData(SentDataOrReceivedData, TrueForIPv6FalseForIPv4, IsSuccessful);
-									if (!IsSuccessful)
-									{
-										Essenbp::WriteLogToFile("\n Error SendData Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
-									}
-								}
-							}
 						}
-					}
-					else
-					{
-						IsSuccessful = false;
-						SendData(SentDataOrReceivedData, TrueForIPv6FalseForIPv4, IsSuccessful);
-						if (!IsSuccessful)
-						{
-							Essenbp::WriteLogToFile("\n Error SendData Failed in ClientSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
-						}
+						free(SendDataChar);						
 					}
 				}
 			}
@@ -2204,43 +2274,24 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					setsockopt(ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
 
 					// Initial Check
-					int is_received = 0;
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)			
-					is_received = ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientAddress, &ClientLength);
+					ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
 
-					if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+					if (!IsSuccessful)// When the size is 0
 					{
 						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in IntialClientJoinToServerThreadIPv4TCP In: NetworkWrapper!");
-						Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in IntialClientJoinToServerThreadIPv4TCP In: NetworkWrapper!");
-
 						closesocket(ClientSocket);
 					}
 					else
 					{
-						CheckAndDecryptData(ReceivedData, false, Received_SizeOfData, IsSuccessful);
-						if (IsSuccessful)
+						ServerSideConnectionDisconnectionConfirmationTCP(ClientSocket, IsSuccessful, true, 2);
+						if (!IsSuccessful)
 						{
-							//ClientInfo->AddReceivedPackage((ReceivedData + 18), Received_SizeOfData + 2, IsSuccessful);
-							if (!IsSuccessful)
-							{
-								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in IntialClientJoinToServerThreadIPv4TCP In: NetworkWrapper!");
-							}
-							else
-							{
-								ServerSideConnectionDisconnectionConfirmationTCP(ClientSocket, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									closesocket(ClientSocket);
-								}
-								else
-								{
-									AddClientIPv4(&ClientSocket, &ClientAddress, IsSuccessful);//PENDING make it a Queue
-								}
-							}
+							closesocket(ClientSocket);
 						}
 						else
 						{
-							Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed in IntialClientJoinToServerThreadIPv4TCP In: NetworkWrapper!");
+							AddClientIPv4(&ClientSocket, &ClientAddress, IsSuccessful);//PENDING make it a Queue
 						}
 					}
 				}
@@ -2278,43 +2329,24 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					setsockopt(ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
 
 					// Initial Check
-					int is_received = 0;
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)			
-					is_received = ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)&ClientAddress, &ClientLength);
+					ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
 
-					if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+					if (!IsSuccessful)// When the size is 0
 					{
 						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in IntialClientJoinToServerThreadIPv6TCP In: NetworkWrapper!");
-						Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in IntialClientJoinToServerThreadIPv6TCP In: NetworkWrapper!");
-
 						closesocket(ClientSocket);
 					}
 					else
 					{
-						CheckAndDecryptData(ReceivedData, false, Received_SizeOfData, IsSuccessful);
-						if (IsSuccessful)
+						ServerSideConnectionDisconnectionConfirmationTCP(ClientSocket, IsSuccessful, true, 2);
+						if (!IsSuccessful)
 						{
-							//ClientInfo->AddReceivedPackage((ReceivedData + 18), Received_SizeOfData + 2, IsSuccessful);
-							if (!IsSuccessful)
-							{
-								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in IntialClientJoinToServerThreadIPv6TCP In: NetworkWrapper!");
-							}
-							else
-							{
-								ServerSideConnectionDisconnectionConfirmationTCP(IsSuccessful);
-								if (!IsSuccessful)
-								{
-									closesocket(ClientSocket);
-								}
-								else
-								{
-									AddClientIPv6(&ClientSocket, &ClientAddress, IsSuccessful);//PENDING make it a Queue
-								}
-							}
+							closesocket(ClientSocket);
 						}
 						else
 						{
-							Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed in IntialClientJoinToServerThreadIPv6TCP In: NetworkWrapper!");
+							AddClientIPv6(&ClientSocket, &ClientAddress, IsSuccessful);//PENDING make it a Queue
 						}
 					}
 				}
@@ -2327,7 +2359,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//TCP Receive Data Loop Thread(After Succesful Join) 
-		void ReceiveDataThreadIPv4TCP(ClientOrderIPv4* ClientInfo)
+		void ReceiveDataThreadTCPIPv4(ClientOrderIPv4* ClientInfo)
 		{
 			bool IsSuccessful = false;
 			char* ReceivedData = (char*)malloc(MaxDataSizePerPacket);
@@ -2336,56 +2368,50 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (ReceivedData == nullptr)
 			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MaxDataSizePerPacket) + " Byes Of Memory for ReceivedData in ReceiveDataThreadIPv4TCP In: NetworkWrapper!\n");
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MaxDataSizePerPacket) + " Byes Of Memory for ReceivedData in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!\n");
 
-				RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);
+				RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);//PENDING make it a queue
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!");
 				}
 			}
 			else
 			{
 				// Initial Check
-				int is_received = 0;
 				while (true)
 				{
-					is_received = 0;
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
-
-					is_received = ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), 0);
+					ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
 					while (!ContinueInputThread)//PENDING Set Atomic Boolean
 					{
 						//Infinite Loop here when ServerInputIsPaused
 					}
 
-					if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+					if (!IsSuccessful)// When the size is 0
 					{
-						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
-						Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
-
-						bool IsSuccessful = false;
-						RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);
+						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!");
+						RemoveClientIPv4(ClientInfo->ClientNumber, IsSuccessful);//PENDING make it a queue
 						if (!IsSuccessful)
 						{
-							Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv4 Failed in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!");
 						}
 						return;
 					}
 					else
 					{
-						CheckAndDecryptData(ReceivedData, false, Received_SizeOfData, IsSuccessful);
+						CheckReceivedDataInfoServer(ReceivedData, false, Received_SizeOfData, IsSuccessful);
 						if (IsSuccessful)
 						{
 							ClientInfo->AddReceivedPackage((ReceivedData + 18), Received_SizeOfData + 2, IsSuccessful);
 							if (!IsSuccessful)
 							{
-								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!");
 							}
 						}
 						else
 						{
-							Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed in ReceiveDataThreadIPv4TCP In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed in ReceiveDataThreadTCPIPv4 In: NetworkWrapper!");
 						}
 					}
 				}
@@ -2393,7 +2419,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//TCP Receive Data Loop Thread(After Succesful Join) 
-		void ReceiveDataThreadIPv6TCP(ClientOrderIPv6* ClientInfo)
+		void ReceiveDataThreadTCPIPv6(ClientOrderIPv6* ClientInfo)
 		{
 			bool IsSuccessful = false;
 			char* ReceivedData = (char*)malloc(MaxDataSizePerPacket);
@@ -2402,56 +2428,50 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (ReceivedData == nullptr)
 			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MaxDataSizePerPacket) + " Byes Of Memory for ReceivedData in ReceiveDataThreadIPv6TCP In: NetworkWrapper!\n");
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MaxDataSizePerPacket) + " Byes Of Memory for ReceivedData in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!\n");
 
-				RemoveClientIPv6(ClientInfo->ClientNumber, IsSuccessful);
+				RemoveClientIPv6(ClientInfo->ClientNumber, IsSuccessful);//PENDING make it a queue
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv6 Failed in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
+					Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv6 Failed in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!");
 				}
 			}
 			else
 			{
 				// Initial Check
-				int is_received = 0;
 				while (true)
 				{
-					is_received = 0;
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
-
-					is_received = ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), 0);
+					ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
 					while (!ContinueInputThread)//PENDING Set Atomic Boolean
 					{
 						//Infinite Loop here when ServerInputIsPaused
 					}
 
-					if ((is_received == 0) || (WSAGetLastError() > 0))// When the size is 0
+					if (!IsSuccessful)// When the size is 0
 					{
-						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
-						Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
-
-						bool IsSuccessful = false;
-						RemoveClientIPv6(ClientInfo->ClientNumber, IsSuccessful);
+						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!");
+						RemoveClientIPv6(ClientInfo->ClientNumber, IsSuccessful);//PENDING make it a queue
 						if (!IsSuccessful)
 						{
-							Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv6 Failed in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error ClientList::RemoveClientIPv6 Failed in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!");
 						}
 						return;
 					}
 					else
 					{
-						CheckAndDecryptData(ReceivedData, false, Received_SizeOfData, IsSuccessful);
+						CheckReceivedDataInfoServer(ReceivedData, false, Received_SizeOfData, IsSuccessful);
 						if (IsSuccessful)
 						{
 							ClientInfo->AddReceivedPackage((ReceivedData + 18), Received_SizeOfData + 2, IsSuccessful);
 							if (!IsSuccessful)
 							{
-								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
+								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!");
 							}
 						}
 						else
 						{
-							Essenbp::WriteLogToFile("\n Error CheckAndDecryptData Failed in ReceiveDataThreadIPv6TCP In: NetworkWrapper!");
+							Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed in ReceiveDataThreadTCPIPv6 In: NetworkWrapper!");
 						}
 					}
 				}
@@ -2544,6 +2564,54 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}	
 
+		//PENDING copy paste this for IPv6 
+		void ReceiveDataThreadUDPIPv4()
+		{
+			bool IsSuccessful = false;
+			char* ReceivedData = (char*)malloc(MaxDataSizePerPacket);
+
+			uint16_t Received_SizeOfData = 0;
+
+			if (ReceivedData == nullptr)
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MaxDataSizePerPacket) + " Byes Of Memory for ReceivedData in ReceiveDataThreadUDPIPv4 In: NetworkWrapper!\n");
+			}
+			else
+			{
+				// Initial Check
+				while (true)
+				{
+					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
+					ReceiveData(ServerSocketIPv4, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					while (!ContinueInputThread)//PENDING Set Atomic Boolean
+					{
+						//Infinite Loop here when ServerInputIsPaused
+					}
+
+					if (!IsSuccessful)// When the size is 0
+					{
+						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataThreadUDPIPv4 In: NetworkWrapper!");
+					}
+					else
+					{
+						CheckReceivedDataInfoServer(ReceivedData, false, Received_SizeOfData, IsSuccessful);
+						if (IsSuccessful)
+						{
+							ClientInfo->AddReceivedPackage((ReceivedData + 18), Received_SizeOfData + 2, IsSuccessful);
+							if (!IsSuccessful)
+							{
+								Essenbp::WriteLogToFile("\n Error ClientList::AddReceivedPackage Failed in ReceiveDataThreadUDPIPv4 In: NetworkWrapper!");
+							}
+						}
+						else
+						{
+							Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed in ReceiveDataThreadUDPIPv4 In: NetworkWrapper!");
+						}
+					}
+				}
+			}
+		}
+
 		void ReceiveDataTCPUDPForClient(char*ReceivedData, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
 		{
 			if (!IsConstructionSuccessful)
@@ -2576,257 +2644,257 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		public:
-			//Start Thread //PENDING
-			//Stop Thread  //PENDING
+		//Start Thread //PENDING
+		//Stop Thread  //PENDING
 			
-			//NOTE: If IPv4/IPv6 Is Present And If IPv6/IPv4 is also needed then Run this function
-			void CreateSocket(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY")
+		//NOTE: If IPv4/IPv6 Is Present And If IPv6/IPv4 is also needed then Run this function
+		void CreateSocket(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY")
+		{
+			IsSuccessful = true;
+			SOCKET* Socketptr = nullptr;
+			if (!IsConstructionSuccessful)
 			{
-				IsSuccessful = true;
-				SOCKET* Socketptr = nullptr;
-				if (!IsConstructionSuccessful)
+				Essenbp::WriteLogToFile("\n Error Calling CreateSocket Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
 				{
-					Essenbp::WriteLogToFile("\n Error Calling CreateSocket Without Constructing the struct In: NetworkWrapper!\n");
+					if (ServerSocketIPv6 != NULL)
+					{
+						Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+						IsSuccessful = false;
+					}
 				}
 				else
 				{
-					if (TrueForIPv6FalseForIPv4)
+					if (ServerSocketIPv4 != NULL)
 					{
-						if (ServerSocketIPv6 != NULL)
+						Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+						IsSuccessful = false;
+					}
+				}
+
+				if (IsSuccessful)
+				{
+					if (TrueForTCPFalseForUDP)
+					{
+						if (TrueForIPv6FalseForIPv4)
 						{
-							Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+							ServerSocketIPv6 = socket(PF_INET6, SOCK_STREAM, 0);
+							Socketptr = &ServerSocketIPv6;
+						}
+						else
+						{
+							ServerSocketIPv4 = socket(PF_INET, SOCK_STREAM, 0);
+							Socketptr = &ServerSocketIPv4;
+						}
+
+						if (*Socketptr == INVALID_SOCKET)
+						{
+							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+							Socketptr = nullptr;
 							IsSuccessful = false;
 						}
 					}
 					else
 					{
-						if (ServerSocketIPv4 != NULL)
+						if (TrueForIPv6FalseForIPv4)
 						{
-							Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+							ServerSocketIPv6 = socket(PF_INET6, SOCK_DGRAM, 0);
+							Socketptr = &ServerSocketIPv6;
+						}
+						else
+						{
+							ServerSocketIPv4 = socket(PF_INET, SOCK_DGRAM, 0);
+							Socketptr = &ServerSocketIPv4;
+						}
+
+						if (*Socketptr == INVALID_SOCKET)
+						{
+							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+							Socketptr = nullptr;
 							IsSuccessful = false;
 						}
 					}
 
 					if (IsSuccessful)
 					{
-						if (TrueForTCPFalseForUDP)
+						setsockopt(*Socketptr, SOL_SOCKET, SO_RCVTIMEO, (const char*)&InputTimeOut, sizeof(InputTimeOut));
+						setsockopt(*Socketptr, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
+
+						if (TrueForIPv6FalseForIPv4)
 						{
-							if (TrueForIPv6FalseForIPv4)
+							memset(&ServerHintIPv4, 0, sizeof(ServerHintIPv4));
+							ServerHintIPv4.sin_family = PF_INET; // Address format is IPv4
+							ServerHintIPv4.sin_port = htons(PortNumber); // Convert from little to big endian
+							inet_pton(PF_INET, ServerIPAddress.c_str(), &(ServerHintIPv4.sin_addr));
+
+							if (IsServer)
 							{
-								ServerSocketIPv6 = socket(PF_INET6, SOCK_STREAM, 0);
-								Socketptr = &ServerSocketIPv6;
+								if (bind(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
 							}
 							else
 							{
-								ServerSocketIPv4 = socket(PF_INET, SOCK_STREAM, 0);
-								Socketptr = &ServerSocketIPv4;
-							}
+								sockaddr_in ClientHintIPv4;
+								memset(&ClientHintIPv4, 0, sizeof(ClientHintIPv4));
+								ClientHintIPv4.sin_family = PF_INET; // Address format is IPv4
+								ClientHintIPv4.sin_port = htons(0); // Convert from little to big endian
+								if (ClientIPAddress == "INADDR_ANY")
+								{
+									ClientHintIPv4.sin_addr.s_addr = INADDR_ANY;
+								}
+								else
+								{
+									inet_pton(PF_INET, ClientIPAddress.c_str(), &(ClientHintIPv4.sin_addr));
+								}
 
-							if (*Socketptr == INVALID_SOCKET)
-							{
-								Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-								Socketptr = nullptr;
-								IsSuccessful = false;
+								if (bind(*Socketptr, (sockaddr*)&ClientHintIPv4, sizeof(ClientHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
+								else
+								{
+									if (connect(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
+									{
+										Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+										IsSuccessful = false;
+									}
+								}
 							}
 						}
 						else
 						{
-							if (TrueForIPv6FalseForIPv4)
-							{
-								ServerSocketIPv6 = socket(PF_INET6, SOCK_DGRAM, 0);
-								Socketptr = &ServerSocketIPv6;
-							}
-							else
-							{
-								ServerSocketIPv4 = socket(PF_INET, SOCK_DGRAM, 0);
-								Socketptr = &ServerSocketIPv4;
-							}
+							memset(&ServerHintIPv6, 0, sizeof(ServerHintIPv6));
+							ServerHintIPv6.sin6_family = PF_INET6; // Address format is IPv6
+							ServerHintIPv6.sin6_port = htons(PortNumber); // Convert from little to big endian
+							inet_pton(PF_INET6, ServerIPAddress.c_str(), &(ServerHintIPv6.sin6_addr));
 
-							if (*Socketptr == INVALID_SOCKET)
+							if (IsServer)
 							{
-								Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-								Socketptr = nullptr;
-								IsSuccessful = false;
-							}
-						}
-
-						if (IsSuccessful)
-						{
-							setsockopt(*Socketptr, SOL_SOCKET, SO_RCVTIMEO, (const char*)&InputTimeOut, sizeof(InputTimeOut));
-							setsockopt(*Socketptr, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
-
-							if (TrueForIPv6FalseForIPv4)
-							{
-								memset(&ServerHintIPv4, 0, sizeof(ServerHintIPv4));
-								ServerHintIPv4.sin_family = PF_INET; // Address format is IPv4
-								ServerHintIPv4.sin_port = htons(PortNumber); // Convert from little to big endian
-								inet_pton(PF_INET, ServerIPAddress.c_str(), &(ServerHintIPv4.sin_addr));
-
-								if (IsServer)
+								if (bind(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
 								{
-									if (bind(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
-									{
-										Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-										IsSuccessful = false;
-									}
-								}
-								else
-								{
-									sockaddr_in ClientHintIPv4;
-									memset(&ClientHintIPv4, 0, sizeof(ClientHintIPv4));
-									ClientHintIPv4.sin_family = PF_INET; // Address format is IPv4
-									ClientHintIPv4.sin_port = htons(0); // Convert from little to big endian
-									if (ClientIPAddress == "INADDR_ANY")
-									{
-										ClientHintIPv4.sin_addr.s_addr = INADDR_ANY;
-									}
-									else
-									{
-										inet_pton(PF_INET, ClientIPAddress.c_str(), &(ClientHintIPv4.sin_addr));
-									}
-
-									if (bind(*Socketptr, (sockaddr*)&ClientHintIPv4, sizeof(ClientHintIPv4)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
-									{
-										Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-										IsSuccessful = false;
-									}
-									else
-									{
-										if (connect(*Socketptr, (sockaddr*)&ServerHintIPv4, sizeof(ServerHintIPv4)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
-										{
-											Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-											IsSuccessful = false;
-										}
-									}
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+									IsSuccessful = false;
 								}
 							}
 							else
 							{
-								memset(&ServerHintIPv6, 0, sizeof(ServerHintIPv6));
-								ServerHintIPv6.sin6_family = PF_INET6; // Address format is IPv6
-								ServerHintIPv6.sin6_port = htons(PortNumber); // Convert from little to big endian
-								inet_pton(PF_INET6, ServerIPAddress.c_str(), &(ServerHintIPv6.sin6_addr));
-
-								if (IsServer)
+								sockaddr_in6 ClientHintIPv6;
+								memset(&ClientHintIPv6, 0, sizeof(ClientHintIPv6));
+								ClientHintIPv6.sin6_family = PF_INET6; // Address format is IPv4
+								ClientHintIPv6.sin6_port = htons(0); // Convert from little to big endian
+								if (ClientIPAddress == "INADDR_ANY")
 								{
-									if (bind(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
-									{
-										Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-										IsSuccessful = false;
-									}
+									ClientHintIPv6.sin6_addr = in6addr_any;
 								}
 								else
 								{
-									sockaddr_in6 ClientHintIPv6;
-									memset(&ClientHintIPv6, 0, sizeof(ClientHintIPv6));
-									ClientHintIPv6.sin6_family = PF_INET6; // Address format is IPv4
-									ClientHintIPv6.sin6_port = htons(0); // Convert from little to big endian
-									if (ClientIPAddress == "INADDR_ANY")
-									{
-										ClientHintIPv6.sin6_addr = in6addr_any;
-									}
-									else
-									{
-										inet_pton(PF_INET6, ClientIPAddress.c_str(), &(ClientHintIPv6.sin6_addr));
-									}
+									inet_pton(PF_INET6, ClientIPAddress.c_str(), &(ClientHintIPv6.sin6_addr));
+								}
 
-									if (bind(*Socketptr, (sockaddr*)&ClientHintIPv6, sizeof(ClientHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								if (bind(*Socketptr, (sockaddr*)&ClientHintIPv6, sizeof(ClientHintIPv6)) == SOCKET_ERROR) // Bind The Socket to Ip And Port
+								{
+									Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+									IsSuccessful = false;
+								}
+								else
+								{
+									if (connect(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
 									{
-										Essenbp::WriteLogToFile("\n Error bind() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+										Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
 										IsSuccessful = false;
-									}
-									else
-									{
-										if (connect(*Socketptr, (sockaddr*)&ServerHintIPv6, sizeof(ServerHintIPv6)) == SOCKET_ERROR) // Connect The Socket to Ip And Port
-										{
-											Essenbp::WriteLogToFile("\n Error connet() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-											IsSuccessful = false;
-										}
 									}
 								}
 							}
 						}
 					}
 				}
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error CreateSocket Failed In: NetworkWrapper!");
-				}
 			}
 
-			//For Server And Client
-			NetworkWrapper(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY", int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, uint16_t ArgSentPacketsArchiveSize = 128, uint16_t ArgReceivedPacketsArchiveSize = 128, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint16_t ArgMaxDataSizePerPacket = 490) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error CreateSocket Failed In: NetworkWrapper!");
+			}
+		}
 
-				if (!EndianCheckDone)
-				{
-					NW_PCheckIfLittleEndian();
-				}
+		//For Server And Client
+		NetworkWrapper(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY", int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, uint16_t ArgSentPacketsArchiveSize = 128, uint16_t ArgReceivedPacketsArchiveSize = 128, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint16_t ArgMaxDataSizePerPacket = 490) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+		{
+			Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
 
-				ServerSocketIPv4 = NULL;
-				ServerSocketIPv6 = NULL;
-				ServerHintIPv4 = { 0 };
-				ServerHintIPv6 = { 0 };
+			if (!EndianCheckDone)
+			{
+				NW_PCheckIfLittleEndian();
+			}
 
-				IsConstructionSuccessful = false;
-				IsSuccessful = true;
+			ServerSocketIPv4 = NULL;
+			ServerSocketIPv6 = NULL;
+			ServerHintIPv4 = { 0 };
+			ServerHintIPv6 = { 0 };
+
+			IsConstructionSuccessful = false;
+			IsSuccessful = true;
 
 #ifdef _WIN32
-				// INITIALIZE WINSOCK
-				/*------------------------------------------------------------------------------------------------------------------*/
-				// Structure to store the WinSock version. This is filled in
-				// on the call to WSAStartup()
-				WSADATA data;
+			// INITIALIZE WINSOCK
+			/*------------------------------------------------------------------------------------------------------------------*/
+			// Structure to store the WinSock version. This is filled in
+			// on the call to WSAStartup()
+			WSADATA data;
 
-				// To start WinSock, the required version must be passed to
-				// WSAStartup(). This server is going to use WinSock version
-				// 2 so  create a word that will store 2 and 2 in hex i.e.
-				// 0x0202
-				//WORD version = MAKEWORD(2, 2);//Same below
+			// To start WinSock, the required version must be passed to
+			// WSAStartup(). This server is going to use WinSock version
+			// 2 so  create a word that will store 2 and 2 in hex i.e.
+			// 0x0202
+			//WORD version = MAKEWORD(2, 2);//Same below
 
-				// Start WinSock
-				int wsOk = WSAStartup(MAKEWORD(2, 2), &data);
-				if (wsOk != 0)
-				{
-					Essenbp::WriteLogToFile("\n Error Winsock Startup Failed In: NetworkWrapper!");
-					Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
-					IsSuccessful = false;
-					return;
-				}
-				/*------------------------------------------------------------------------------------------------------------------*/
-#endif			
-				ClientsList = new ClientOrderList(MaximumUnusedClientSpots, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);
-				if (ClientsList == nullptr)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderList)) + " Byes Of Memory for ClientsList in AddClientIPv6 In: NetworkWrapper!\n");
-					IsSuccessful = false;
-				}
-
-				if (IsSuccessful)
-				{
-					InputTimeOut = SocketInputTimeoutInSeconds * 1000;//60 Seconds InputTimeOut
-					OutputTimeOut = SocketOutputTimeoutInSeconds * 1000;//60 Seconds OutputTimeOut
-					MaxDataSizePerPacket = ArgMaxDataSizePerPacket;
-					MaximumBackLogConnectionsTCP = ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP;//Does not Matter for UDP
-					SentPacketsArchiveSize = ArgSentPacketsArchiveSize;
-					ReceivedPacketsArchiveSize = ArgReceivedPacketsArchiveSize;
-
-					IsConstructionSuccessful = true;//Temp for the CreateSocket Function
-					CreateSocket(ServerIPAddress, PortNumber, TrueForIPv6FalseForIPv4, IsSuccessful, ClientIPAddress);
-				}
-
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
-					IsConstructionSuccessful = false;
-				}
-				else
-				{
-					IsConstructionSuccessful = true;
-				}
+			// Start WinSock
+			int wsOk = WSAStartup(MAKEWORD(2, 2), &data);
+			if (wsOk != 0)
+			{
+				Essenbp::WriteLogToFile("\n Error Winsock Startup Failed In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
+				IsSuccessful = false;
+				return;
 			}
+			/*------------------------------------------------------------------------------------------------------------------*/
+#endif			
+			ClientsList = new ClientOrderList(MaximumUnusedClientSpots, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);
+			if (ClientsList == nullptr)
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderList)) + " Byes Of Memory for ClientsList in AddClientIPv6 In: NetworkWrapper!\n");
+				IsSuccessful = false;
+			}
+
+			if (IsSuccessful)
+			{
+				InputTimeOut = SocketInputTimeoutInSeconds * 1000;//60 Seconds InputTimeOut
+				OutputTimeOut = SocketOutputTimeoutInSeconds * 1000;//60 Seconds OutputTimeOut
+				MaxDataSizePerPacket = ArgMaxDataSizePerPacket;
+				MaximumBackLogConnectionsTCP = ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP;//Does not Matter for UDP
+				SentPacketsArchiveSize = ArgSentPacketsArchiveSize;
+				ReceivedPacketsArchiveSize = ArgReceivedPacketsArchiveSize;
+
+				IsConstructionSuccessful = true;//Temp for the CreateSocket Function
+				CreateSocket(ServerIPAddress, PortNumber, TrueForIPv6FalseForIPv4, IsSuccessful, ClientIPAddress);
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
+				IsConstructionSuccessful = false;
+			}
+			else
+			{
+				IsConstructionSuccessful = true;
+			}
+		}
 
 		~NetworkWrapper()
 		{
@@ -2841,6 +2909,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					closesocket(ServerSocketIPv6);
 				}
+				delete ClientsList;
 				IsConstructionSuccessful = false;
 			}
 		}
