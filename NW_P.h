@@ -1344,6 +1344,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	};
 
+	enum class NetworkConstructorType 
+	{
+		TCPIPv4,
+		TCPIPv6,
+		UDPIPv4,
+		UDPIPv6,
+		TCPIPv4And6,
+		UDPIPv4And6,
+		None //Select None If Not needed
+	};
+
 	//NOTE: IPv4 List And IPv6 List both has its own client Numbers, Adding Client to IPv4 will not Increase the List of IPv6 and vice-versa
 	struct NetworkWrapper
 	{
@@ -1366,12 +1377,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		std::atomic_bool IsChangingClientOrder = false;
 
 		const bool IsServer;
-		const bool TrueForTCPFalseForUDP;
+		bool IsClientTrueForTCPFalseForUDP;// Do not Change it Manually
 		uint64_t ClientUniqueIDIPv4;//ONLY FOR CLIENT
 		uint64_t ClientUniqueIDIPv6;//ONLY FOR CLIENT
 
-		SOCKET ServerSocketIPv4 = NULL;
-		SOCKET ServerSocketIPv6 = NULL;
+		SOCKET TCPServerSocketIPv4 = NULL;
+		SOCKET TCPServerSocketIPv6 = NULL;
+		SOCKET UDPServerSocketIPv4 = NULL;
+		SOCKET UDPServerSocketIPv6 = NULL;
 		sockaddr_in ServerHintIPv4 = { 0 };//This Server or Connecting Server hint
 		sockaddr_in6 ServerHintIPv6 = { 0 };//This Server or Connecting Server hint
 
@@ -1545,13 +1558,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				if (ServerSocketIPv4 == NULL)
+				if (UDPServerSocketIPv4 == NULL)
 				{
 					Essenbp::WriteLogToFile("\n Error IPv4 Socket Is not Created in SendDataUDP In: NetworkWrapper!\n");
 				}
 				else
 				{
-					sendto(ServerSocketIPv4, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
+					sendto(UDPServerSocketIPv4, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 				}
 			}
 
@@ -1571,13 +1584,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				if (ServerSocketIPv6 == NULL)
+				if (UDPServerSocketIPv6 == NULL)
 				{
 					Essenbp::WriteLogToFile("\n Error IPv6 Socket Is not Created in SendDataUDP In: NetworkWrapper!\n");
 				}
 				else
 				{
-					sendto(ServerSocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
+					sendto(UDPServerSocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 				}
 			}
 
@@ -1653,7 +1666,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						ClientsList->GetClientIPv6(ClientNumber, &ClientOrderIPv6ptr, IsSuccessful);
 						if (IsSuccessful)
 						{
-							if (TrueForTCPFalseForUDP)
+							if (ClientOrderIPv6ptr->ClientSocket != NULL)
 							{
 								SendDataTCPUDP(&(ClientOrderIPv6ptr->ClientSocket), DataAndSize, IsSuccessful);
 								if (!IsSuccessful)
@@ -1681,7 +1694,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						ClientsList->GetClientIPv4(ClientNumber, &ClientOrderIPv4ptr, IsSuccessful);
 						if (IsSuccessful)
 						{
-							if (TrueForTCPFalseForUDP)
+							if (ClientOrderIPv4ptr->ClientSocket != NULL)
 							{
 								SendDataTCPUDP(&(ClientOrderIPv4ptr->ClientSocket), DataAndSize, IsSuccessful);
 								if (!IsSuccessful)
@@ -1732,7 +1745,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (TrueForIPv6FalseForIPv4)
 					{
-						SendDataTCPUDP(&ServerSocketIPv6, DataAndSize, IsSuccessful);
+						if (IsClientTrueForTCPFalseForUDP)
+						{
+							SendDataTCPUDP(&TCPServerSocketIPv6, DataAndSize, IsSuccessful);
+						}
+						else
+						{
+							SendDataTCPUDP(&UDPServerSocketIPv6, DataAndSize, IsSuccessful);
+						}
+						
 						if (!IsSuccessful)
 						{
 							Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
@@ -1740,7 +1761,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 					else
 					{
-						SendDataTCPUDP(&ServerSocketIPv4, DataAndSize, IsSuccessful);
+						if (IsClientTrueForTCPFalseForUDP)
+						{
+							SendDataTCPUDP(&TCPServerSocketIPv4, DataAndSize, IsSuccessful);
+						}
+						else
+						{
+							SendDataTCPUDP(&UDPServerSocketIPv4, DataAndSize, IsSuccessful);
+						}
+
 						if (!IsSuccessful)
 						{
 							Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
@@ -2648,7 +2677,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//Stop Thread  //PENDING
 			
 		//NOTE: If IPv4/IPv6 Is Present And If IPv6/IPv4 is also needed then Run this function
-		void CreateSocket(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY")
+		void CreateSocket(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForTCPFalseForUDP, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY")
 		{
 			IsSuccessful = true;
 			SOCKET* Socketptr = nullptr;
@@ -2658,22 +2687,41 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				if (TrueForIPv6FalseForIPv4)
+				if (TrueForTCPFalseForUDP)
 				{
-					if (ServerSocketIPv6 != NULL)
+					if (TrueForIPv6FalseForIPv4)
 					{
-						Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
-						IsSuccessful = false;
+						Socketptr = &TCPServerSocketIPv6;
+					}
+					else
+					{
+						Socketptr = &TCPServerSocketIPv4;
 					}
 				}
 				else
 				{
-					if (ServerSocketIPv4 != NULL)
+					if (TrueForIPv6FalseForIPv4)
 					{
-						Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
-						IsSuccessful = false;
+						Socketptr = &UDPServerSocketIPv6;
+					}
+					else
+					{
+						Socketptr = &UDPServerSocketIPv4;
 					}
 				}
+
+				if (Socketptr != NULL)
+				{
+					if (TrueForIPv6FalseForIPv4)
+					{
+						Essenbp::WriteLogToFile("\n Error IPv6 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+					}
+					else
+					{
+						Essenbp::WriteLogToFile("\n Error IPv4 Socket Already Exists in CreateSocket In: NetworkWrapper!");
+					}
+					IsSuccessful = false;
+				}				
 
 				if (IsSuccessful)
 				{
@@ -2681,41 +2729,30 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					{
 						if (TrueForIPv6FalseForIPv4)
 						{
-							ServerSocketIPv6 = socket(PF_INET6, SOCK_STREAM, 0);
-							Socketptr = &ServerSocketIPv6;
+							*Socketptr = socket(PF_INET6, SOCK_STREAM, 0);
 						}
 						else
 						{
-							ServerSocketIPv4 = socket(PF_INET, SOCK_STREAM, 0);
-							Socketptr = &ServerSocketIPv4;
-						}
-
-						if (*Socketptr == INVALID_SOCKET)
-						{
-							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-							Socketptr = nullptr;
-							IsSuccessful = false;
+							*Socketptr = socket(PF_INET, SOCK_STREAM, 0);
 						}
 					}
 					else
 					{
 						if (TrueForIPv6FalseForIPv4)
 						{
-							ServerSocketIPv6 = socket(PF_INET6, SOCK_DGRAM, 0);
-							Socketptr = &ServerSocketIPv6;
+							*Socketptr = socket(PF_INET6, SOCK_DGRAM, 0);
 						}
 						else
 						{
-							ServerSocketIPv4 = socket(PF_INET, SOCK_DGRAM, 0);
-							Socketptr = &ServerSocketIPv4;
+							*Socketptr = socket(PF_INET, SOCK_DGRAM, 0);
 						}
+					}
 
-						if (*Socketptr == INVALID_SOCKET)
-						{
-							Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
-							Socketptr = nullptr;
-							IsSuccessful = false;
-						}
+					if (*Socketptr == INVALID_SOCKET)
+					{
+						Essenbp::WriteLogToFile("\n Error socket() Failed with Error " + std::to_string(WSAGetLastError()) + " in CreateSocket In: NetworkWrapper!");
+						Socketptr = nullptr;
+						IsSuccessful = false;
 					}
 
 					if (IsSuccessful)
@@ -2824,7 +2861,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//For Server And Client
-		NetworkWrapper(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool TrueForIPv6FalseForIPv4, bool ArgTrueForTCPFalseForUDP, bool& IsSuccessful, std::string ClientIPAddress = "INADDR_ANY", int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, uint16_t ArgSentPacketsArchiveSize = 128, uint16_t ArgReceivedPacketsArchiveSize = 128, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint16_t ArgMaxDataSizePerPacket = 490) : IsServer(TrueForServerFalseForClient), TrueForTCPFalseForUDP(ArgTrueForTCPFalseForUDP)
+		//NOTE: For Client Leave ProtocolSpecificaionTwo blank or set to None
+		NetworkWrapper(std::string ServerIPAddress, unsigned int PortNumber, bool TrueForServerFalseForClient, bool& IsSuccessful, NetworkConstructorType ProtocolSpecificaionOne, NetworkConstructorType ProtocolSpecificaionTwo = NetworkConstructorType::None, std::string ClientIPAddress = "INADDR_ANY", int SocketInputTimeoutInSeconds = 60, int SocketOutputTimeoutInSeconds = 60, uint64_t MaximumUnusedClientSpots = 2048, uint16_t ArgSentPacketsArchiveSize = 128, uint16_t ArgReceivedPacketsArchiveSize = 128, int ArgMaximumBackLogConnectionsTCP_ONLY_FOR_TCP = 5, uint16_t ArgMaxDataSizePerPacket = 490) : IsServer(TrueForServerFalseForClient)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetworkWrapper!");
 
@@ -2833,8 +2871,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				NW_PCheckIfLittleEndian();
 			}
 
-			ServerSocketIPv4 = NULL;
-			ServerSocketIPv6 = NULL;
+			TCPServerSocketIPv4 = NULL;
+			TCPServerSocketIPv6 = NULL;
+			UDPServerSocketIPv4 = NULL;
+			UDPServerSocketIPv6 = NULL;
+
 			ServerHintIPv4 = { 0 };
 			ServerHintIPv6 = { 0 };
 
@@ -2865,11 +2906,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			/*------------------------------------------------------------------------------------------------------------------*/
 #endif			
-			ClientsList = new ClientOrderList(MaximumUnusedClientSpots, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);
-			if (ClientsList == nullptr)
+			if (TrueForServerFalseForClient)
 			{
-				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderList)) + " Byes Of Memory for ClientsList in AddClientIPv6 In: NetworkWrapper!\n");
-				IsSuccessful = false;
+				ClientsList = new ClientOrderList(MaximumUnusedClientSpots, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);
+				if (ClientsList == nullptr)
+				{
+					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderList)) + " Byes Of Memory for ClientsList in AddClientIPv6 In: NetworkWrapper!\n");
+					IsSuccessful = false;
+				}
+			}
+			else
+			{
+				if (ProtocolSpecificaionTwo != NetworkConstructorType::None)
+				{
+					Essenbp::WriteLogToFile("\n Error ProtocolSpecificaionTwo Is Only For Server In NetworkWrapper!");
+					IsSuccessful = false;
+				}
 			}
 
 			if (IsSuccessful)
@@ -2881,8 +2933,107 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				SentPacketsArchiveSize = ArgSentPacketsArchiveSize;
 				ReceivedPacketsArchiveSize = ArgReceivedPacketsArchiveSize;
 
-				IsConstructionSuccessful = true;//Temp for the CreateSocket Function
-				CreateSocket(ServerIPAddress, PortNumber, TrueForIPv6FalseForIPv4, IsSuccessful, ClientIPAddress);
+				IsConstructionSuccessful = true;//Temp for the CreateSocket Function				
+				
+				IsSuccessful = false;
+				switch (ProtocolSpecificaionOne)
+				{
+				case NW_P::NetworkConstructorType::TCPIPv4:
+					CreateSocket(ServerIPAddress, PortNumber, true, false, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::TCPIPv6:
+					CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv4:
+					CreateSocket(ServerIPAddress, PortNumber, false, false, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv6:
+					CreateSocket(ServerIPAddress, PortNumber, false, true, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::TCPIPv4And6:
+					CreateSocket(ServerIPAddress, PortNumber, true, false, IsSuccessful, ClientIPAddress);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error CreateSocket Failed In NetworkWrapper!");
+					}
+					else
+					{
+						CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					}					
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv4And6:
+					CreateSocket(ServerIPAddress, PortNumber, false, false, IsSuccessful, ClientIPAddress);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error CreateSocket Failed In NetworkWrapper!");
+					}
+					else
+					{
+						CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					}
+					break;
+
+				default:
+					break;
+				}	
+
+				switch (ProtocolSpecificaionOne)
+				{
+				case NW_P::NetworkConstructorType::TCPIPv4:
+					CreateSocket(ServerIPAddress, PortNumber, true, false, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::TCPIPv6:
+					CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv4:
+					CreateSocket(ServerIPAddress, PortNumber, false, false, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv6:
+					CreateSocket(ServerIPAddress, PortNumber, false, true, IsSuccessful, ClientIPAddress);
+					break;
+
+				case NW_P::NetworkConstructorType::TCPIPv4And6:
+					CreateSocket(ServerIPAddress, PortNumber, true, false, IsSuccessful, ClientIPAddress);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error CreateSocket Failed In NetworkWrapper!");
+					}
+					else
+					{
+						CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					}
+					break;
+
+				case NW_P::NetworkConstructorType::UDPIPv4And6:
+					CreateSocket(ServerIPAddress, PortNumber, false, false, IsSuccessful, ClientIPAddress);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error CreateSocket Failed In NetworkWrapper!");
+					}
+					else
+					{
+						CreateSocket(ServerIPAddress, PortNumber, true, true, IsSuccessful, ClientIPAddress);
+					}
+					break;
+
+				case NW_P::NetworkConstructorType::None:
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error No Socket Type is Created In NetworkWrapper!");
+					}
+					break;
+
+				default:
+					break;
+				}
 			}
 
 			if (!IsSuccessful)
@@ -2901,15 +3052,26 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			Essenbp::WriteLogToFile("\n Destructing NetworkWrapper!");
 			if (IsConstructionSuccessful)
 			{
-				if (ServerSocketIPv4 != NULL)
+				if (TCPServerSocketIPv4 != NULL)
 				{
-					closesocket(ServerSocketIPv4);
+					closesocket(TCPServerSocketIPv4);
 				}
-				if (ServerSocketIPv6 != NULL)
+				if (TCPServerSocketIPv6 != NULL)
 				{
-					closesocket(ServerSocketIPv6);
+					closesocket(TCPServerSocketIPv6);
 				}
-				delete ClientsList;
+				if (UDPServerSocketIPv4 != NULL)
+				{
+					closesocket(UDPServerSocketIPv4);
+				}
+				if (UDPServerSocketIPv6 != NULL)
+				{
+					closesocket(UDPServerSocketIPv6);
+				}
+				if (ClientsList != nullptr)
+				{
+					delete ClientsList;
+				}
 				IsConstructionSuccessful = false;
 			}
 		}
