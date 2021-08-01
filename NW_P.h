@@ -1368,10 +1368,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		unsigned long InputTimeOut = 0;//TCP SOCKET InputTimeOut	//NOTE: will reuse this for UDP custom Time out
 		unsigned long OutputTimeOut = 0;//TCP SOCKET OutputTimeOut	//NOTE: will reuse this for UDP custom Time out 
 #endif
-		uint16_t MaxDataSizePerPacket = 490;//						//NOTE: Optimal Size for UDP is 490 = 508 - 18 And Optimal Size of TCP is 1422 = 1440 - 18, Minus 10 Extra for NetworkWrapper Specific Info/Commands(8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Command)
+		uint16_t MaxDataSizePerPacket = 508;//						//NOTE: Optimal Size for UDP is 490 + 18 = 508 And Optimal Size of TCP is 1422 + 19 = 1440 , Minus 10 Extra for NetworkWrapper Specific Info/Commands(8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Command)
 		int MaximumBackLogConnectionsTCP = 5;//						//NOTE: Maximum Number Of TCP Connections That can be Queued At a time
-		uint16_t SentPacketsArchiveSize = 128;//					//NOTE: Previous Sent Packets Is Stored(For Each Client)
-		uint16_t ReceivedPacketsArchiveSize = 128;//				//NOTE: Previous Sent Packets Is Stored(For Each Client)
+		uint16_t SentPacketsArchiveSize = 256;//					//NOTE: Previous Sent Packets Is Stored(For Each Client)
+		uint16_t ReceivedPacketsArchiveSize = 256;//				//NOTE: Previous Sent Packets Is Stored(For Each Client)
 
 		std::atomic_bool IsProcessingData = false;
 		std::atomic_bool IsChangingClientOrder = false;
@@ -1388,7 +1388,105 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		sockaddr_in ServerHintIPv4 = { 0 };//This Server or Connecting Server hint
 		sockaddr_in6 ServerHintIPv6 = { 0 };//This Server or Connecting Server hint
 
-		ClientOrderList* ClientsList;
+		//NOTE: This is Only For Server
+		ClientOrderList* ClientsList = nullptr;//					//NOTE: This is used by Server for List of Clients Connected
+
+		//NOTE: This Is Only  For Client
+		ArrayOfNetworkDataAndSize* ClientSentPackets = nullptr;
+		ArrayOfNetworkDataAndSize* ClientReceivedPackets = nullptr;
+		uint16_t ClientSentCount = 0;//								//NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
+		uint16_t ClientReceivedCount = 0;//							//NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
+
+		//PENDING add Atomic Bool for this
+		void ClientAddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling ClientAddSentPackage Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (IsServer)
+				{
+					Essenbp::WriteLogToFile("\n Error Trying to Send Data to Server from A Client in ClientAddSentPackage In: NetworkWrapper!\n");
+					Essenbp::WriteLogToFile("NOTE: Construct a Client To Send Data to Host Server\n");
+				}
+				else
+				{
+					NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+					ClientSentPackets->GetData(ClientSentCount, &PtrToDataAndDataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in ClientAddSentPackage In: NetworkWrapper!");
+					}
+					else
+					{
+						PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in ClientAddSentPackage In: NetworkWrapper!");
+						}
+						else
+						{
+							ClientSentCount = ClientSentCount + 1;
+						}
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error ClientAddSentPackage() In: NetworkWrapper!");
+			}
+		}
+
+		//PENDING add Atomic Bool for this
+		//NOTE:Command 2Bytes + Data Varied Bytes
+		void ClientAddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling ClientAddReceivedPackage Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (IsServer)
+				{
+					Essenbp::WriteLogToFile("\n Error Trying to Send Data to Server from A Client in ClientAddReceivedPackage In: NetworkWrapper!\n");
+					Essenbp::WriteLogToFile("NOTE: Construct a Client To Send Data to Host Server\n");
+				}
+				else
+				{
+					NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+					ClientReceivedPackets->GetData(ClientSentCount, &PtrToDataAndDataSize, IsSuccessful);
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in ClientAddReceivedPackage In: NetworkWrapper!");
+					}
+					else
+					{
+						PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in ClientAddReceivedPackage In: NetworkWrapper!");
+						}
+						else
+						{
+							ClientReceivedCount = ClientReceivedCount + 1;
+						}
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error ClientAddSentPackage() In: NetworkWrapper!");
+			}
+		}
 
 		//NOTE: This checks if the sender is in List, and has given correct ClientUniqueID[8 to 15] ("Password" Randomly Generated upon successful connection to The server)
 		//NOTE: Received_SizeOfData is the Size of the Data(Designated by the Server/Client) Carried by the Received packet
@@ -1621,7 +1719,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		void ReceiveData(SOCKET ReciveSocket, char* ReceivedData, uint16_t DataBufferSize, bool& IsSuccessful)
+		void ReceiveData(SOCKET ReciveSocket, char* ReceivedData, uint16_t DataBufferSize, uint16_t& SizeOfReturnedData, bool& IsSuccessful)
 		{
 			if (!IsConstructionSuccessful)
 			{
@@ -1629,11 +1727,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				int IsDataReceived = 0;
 				memset(ReceivedData, 0, DataBufferSize); // Clear the receive Buffer(ReceivedDatafer)			
-				IsDataReceived = recv(ReciveSocket, ReceivedData, sizeof(ReceivedData), 0);
+				SizeOfReturnedData = recv(ReciveSocket, ReceivedData, sizeof(ReceivedData), 0);
 
-				if ((IsDataReceived == 0) || (WSAGetLastError() > 0))// When the size is 0
+				if ((SizeOfReturnedData == 0) || (WSAGetLastError() > 0))// When the size is 0
 				{
 					Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveData In: NetworkWrapper!");
 					Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveData In: NetworkWrapper!");
@@ -1775,6 +1872,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
 						}
 					}
+					if (!IsSuccessful)
+					{
+						Essenbp::WriteLogToFile("Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
+					}
+					else
+					{
+						ClientAddSentPackage(DataAndSize.GetData(), DataAndSize.GetDataSize(), IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("Error ClientAddSentPackage() Failed in ReceiveDataTCPUDPForClient In: NetworkWrapper!");
+						}
+					}					
 				}
 			}
 
@@ -1889,7 +1998,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								}
 								else
 								{		
-									ReceiveData(ClientSocket, ReceivedData, MaxDataSizePerPacket, IsSuccessful);
+									uint16_t Received_SizeOfData = 0;
+									ReceiveData(ClientSocket, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 									if (!IsSuccessful)// When the size is 0
 									{
 										Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ServerSideConnectionDisconnectionConfirmationTCP In: NetworkWrapper!");
@@ -1897,7 +2007,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									else
 									{
 										IsSuccessful = false;
-										uint16_t Received_SizeOfData = 0;
 										for (uint8_t i = 0; i < MaxVerificationTries; ++i)
 										{
 											if(!IsInitialJoin)
@@ -2303,8 +2412,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					setsockopt(ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
 
 					// Initial Check
-					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)			
-					ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)		
+					ReceiveData(ClientSocket, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 
 					if (!IsSuccessful)// When the size is 0
 					{
@@ -2358,8 +2467,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					setsockopt(ClientSocket, SOL_SOCKET, SO_SNDTIMEO, (const char*)&OutputTimeOut, sizeof(OutputTimeOut));
 
 					// Initial Check
-					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)			
-					ReceiveData(ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)		
+					ReceiveData(ClientSocket, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 
 					if (!IsSuccessful)// When the size is 0
 					{
@@ -2411,7 +2520,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				while (true)
 				{
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
-					ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					ReceiveData(ClientInfo->ClientSocket, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 					while (!ContinueInputThread)//PENDING Set Atomic Boolean
 					{
 						//Infinite Loop here when ServerInputIsPaused
@@ -2471,7 +2580,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				while (true)
 				{
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
-					ReceiveData(ClientInfo->ClientSocket, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					ReceiveData(ClientInfo->ClientSocket, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 					while (!ContinueInputThread)//PENDING Set Atomic Boolean
 					{
 						//Infinite Loop here when ServerInputIsPaused
@@ -2611,7 +2720,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				while (true)
 				{
 					memset(ReceivedData, 0, MaxDataSizePerPacket); // Clear the receive Buffer(ReceivedDatafer)
-					ReceiveData(ServerSocketIPv4, ReceivedData, sizeof(ReceivedData), IsSuccessful);
+					ReceiveData(UDPServerSocketIPv4, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
 					while (!ContinueInputThread)//PENDING Set Atomic Boolean
 					{
 						//Infinite Loop here when ServerInputIsPaused
@@ -2641,6 +2750,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		//NOTE: Run Two Instances of this One for IPv4 Other for IPv6
 		void ReceiveDataTCPUDPForClient(char*ReceivedData, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
 		{
 			if (!IsConstructionSuccessful)
@@ -2655,16 +2765,49 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					if (TrueForIPv6FalseForIPv4)
+					uint16_t Received_SizeOfData;
+					if (IsClientTrueForTCPFalseForUDP)
 					{
-						ReceiveData(ServerSocketIPv6, ReceivedData, sizeof(ReceivedData), 0);
+						if (TrueForIPv6FalseForIPv4)
+						{
+							ReceiveData(TCPServerSocketIPv6, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
+						}
+						else
+						{
+							ReceiveData(TCPServerSocketIPv4, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
+						}
 					}
 					else
 					{
-						ReceiveData(ServerSocketIPv4, ReceivedData, sizeof(ReceivedData), 0);
+						if (TrueForIPv6FalseForIPv4)
+						{
+							ReceiveData(UDPServerSocketIPv6, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
+						}
+						else
+						{
+							ReceiveData(UDPServerSocketIPv4, ReceivedData, MaxDataSizePerPacket, Received_SizeOfData, IsSuccessful);
+						}
+					}
+					if (!IsSuccessful)// When the size is 0
+					{
+						Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveDataTCPUDPForClient In: NetworkWrapper!");
+					}
+					else
+					{
+						ClientAddReceivedPackage(ReceivedData, Received_SizeOfData, IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("Error ClientAddReceivedPackage() Failed in ReceiveDataTCPUDPForClient In: NetworkWrapper!");
+						}
 					}
 				}
 			}
+		}
+
+		//PENDING
+		void ProcessReceivedData()//PENDING Complete this for Each Client
+		{
+
 		}
 
 		void NetworkWrapperMainThread()
@@ -2921,6 +3064,25 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					Essenbp::WriteLogToFile("\n Error ProtocolSpecificaionTwo Is Only For Server In NetworkWrapper!");
 					IsSuccessful = false;
+					delete ClientsList;
+				}
+				else
+				{
+					ClientSentPackets = new ArrayOfNetworkDataAndSize;
+					if (ClientSentPackets != nullptr)
+					{
+						ClientReceivedPackets = new ArrayOfNetworkDataAndSize;
+						if (ClientReceivedPackets == nullptr)
+						{
+							delete ClientSentPackets;
+							IsSuccessful = false;
+						}
+					}
+					else
+					{
+						IsSuccessful = false;
+					}	
+					delete ClientsList;
 				}
 			}
 
@@ -3040,6 +3202,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			{
 				Essenbp::WriteLogToFile("\n Error Construction Failed NetworkWrapper!");
 				IsConstructionSuccessful = false;
+				if (ClientsList != nullptr)
+				{
+					delete ClientsList;
+				}
 			}
 			else
 			{
@@ -3071,6 +3237,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				if (ClientsList != nullptr)
 				{
 					delete ClientsList;
+				}
+				if (ClientSentPackets != nullptr)
+				{
+					delete ClientSentPackets;
+				}
+				if (ClientReceivedPackets != nullptr)
+				{
+					delete ClientReceivedPackets;
 				}
 				IsConstructionSuccessful = false;
 			}
