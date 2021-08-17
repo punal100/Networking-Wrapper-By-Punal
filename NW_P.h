@@ -524,16 +524,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			free(ArrayOfNetworkData);
 		}
-	};
+	};	
 
-	struct ClientOrderIPv4
+	//NOTE: Use NetAddr Struct Instead of NetAddrIPv4/6
+	struct NetAddrIPv4
 	{
 	public:
 		uint64_t ClientUniqueID = 0;//This should be changed Every Specified Minutes For Security Purposes...
 
-		const SOCKET ClientSocket;
-		const uint64_t ClientNumber;
-		const sockaddr_in ClientAddress;
+		const SOCKET Socket;
+		const uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
+		const sockaddr_in NetAddress;
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
@@ -545,29 +546,29 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv4(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in ArgClientAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
+		NetAddrIPv4(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : Socket(ArgSocket), UniqueNumber(ArgUniqueNumber), NetAddress(ArgNetAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
-			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv4!");
+			Essenbp::WriteLogToFile("\n Constructing NetAddrIPv4!");
 
-			ClientUniqueID = (uint64_t)&ArgClientSocket;//NOTE: using This Instead Of rand / random //PENDING
+			ClientUniqueID = (uint64_t)&ArgSocket;//NOTE: using This Instead Of rand / random  //PENDING
 
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed ClientOrderIPv4!");
+				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv4!");
 			}
 			else
 			{
 				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
 				if (!IsConstructionSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed ClientOrderIPv4!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv4!");
 				}
 			}
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Construction Failed ClientOrderIPv4!");
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddrIPv4!");
 			}
 		}
 
@@ -577,7 +578,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: ClientOrderIPv4!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: NetAddrIPv4!\n");
 			}
 			else
 			{
@@ -585,14 +586,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: ClientOrderIPv4!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv4!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: ClientOrderIPv4!");
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv4!");
 					}
 					else
 					{
@@ -603,18 +604,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv4!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv4!");
 			}
 		}
 
-		//NOTE:Command 2Bytes + Data Varied Bytes
 		void AddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: ClientOrderIPv4!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: NetAddrIPv4!\n");
 			}
 			else
 			{
@@ -622,14 +622,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: ClientOrderIPv4!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv4!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: ClientOrderIPv4!");
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv4!");
 					}
 					else
 					{
@@ -640,32 +640,33 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv4!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv4!");
 			}
 		}
 
-		~ClientOrderIPv4()
+		~NetAddrIPv4()
 		{
-			Essenbp::WriteLogToFile("\n Destructing ClientOrderIPv4!");
+			Essenbp::WriteLogToFile("\n Destructing NetAddrIPv4!");
 			if (IsConstructionSuccessful)
 			{
-				if (ClientSocket != NULL)
+				if (Socket != NULL)
 				{
-					closesocket(ClientSocket);
+					closesocket(Socket);
 				}
 				IsConstructionSuccessful = false;
 			}
 		}
 	};
 
-	struct ClientOrderIPv6
+	//NOTE: Use NetAddr Struct Instead of NetAddrIPv4/6
+	struct NetAddrIPv6
 	{
 	public:
 		uint64_t ClientUniqueID = 0;//This should be changed Every Specified Minutes For Security Purposes...
 
-		const SOCKET ClientSocket;
-		const uint64_t ClientNumber;
-		const sockaddr_in6 ClientAddress;
+		const SOCKET Socket;
+		const uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
+		const sockaddr_in6 NetAddress;
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
@@ -677,29 +678,29 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		bool IsConstructionSuccessful = false;
 
 		//For UDP set ArgClientSocket == NULL
-		ClientOrderIPv6(SOCKET ArgClientSocket, uint64_t ArgClientNumber, sockaddr_in6 ArgClientAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : ClientSocket(ArgClientSocket), ClientNumber(ArgClientNumber), ClientAddress(ArgClientAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
+		NetAddrIPv6(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : Socket(ArgSocket), UniqueNumber(ArgUniqueNumber), NetAddress(ArgNetAddress), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
-			Essenbp::WriteLogToFile("\n Constructing ClientOrderIPv6!");
+			Essenbp::WriteLogToFile("\n Constructing NetAddrIPv6!");
 
-			ClientUniqueID = (uint64_t)&ArgClientSocket;//NOTE: using This Instead Of rand / random  //PENDING
+			ClientUniqueID = (uint64_t)&ArgSocket;//NOTE: using This Instead Of rand / random  //PENDING
 
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed ClientOrderIPv6!");
+				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv6!");
 			}
 			else
 			{
 				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
 				if (!IsConstructionSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed ClientOrderIPv6!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv6!");
 				}
 			}
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Construction Failed ClientOrderIPv6!");
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddrIPv6!");
 			}
 		}
 
@@ -709,7 +710,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: ClientOrderIPv6!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: NetAddrIPv6!\n");
 			}
 			else
 			{
@@ -717,14 +718,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: ClientOrderIPv6!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv6!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: ClientOrderIPv6!");
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv6!");
 					}
 					else
 					{
@@ -735,7 +736,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv6!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv6!");
 			}
 		}
 
@@ -745,7 +746,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: ClientOrderIPv6!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: NetAddrIPv6!\n");
 			}
 			else
 			{
@@ -753,14 +754,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: ClientOrderIPv6!");
+					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv6!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: ClientOrderIPv6!");
+						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv6!");
 					}
 					else
 					{
@@ -771,281 +772,381 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: ClientOrderIPv6!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv6!");
 			}
 		}
 
-		~ClientOrderIPv6()
+		~NetAddrIPv6()
 		{
-			Essenbp::WriteLogToFile("\n Destructing ClientOrderIPv6!");
+			Essenbp::WriteLogToFile("\n Destructing NetAddrIPv6!");
 			if (IsConstructionSuccessful)
 			{
-				if (ClientSocket != NULL)
+				if (Socket != NULL)
 				{
-					closesocket(ClientSocket);
+					closesocket(Socket);
 				}
 				IsConstructionSuccessful = false;
 			}
 		}
 	};
 
-	//Only For Server
-	struct ClientOrderList
+	//NOTE: For Both IPv4 And IPv6
+	struct NetAddr
+	{
+	public:
+		const bool TrueForIPv6FalseForIPv4;
+		NetAddrIPv4* IPv4Addr = nullptr;
+		NetAddrIPv6* IPv6Addr = nullptr;
+
+		bool IsConstructionSuccessful;
+
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(false)
+		{
+			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
+
+			IsConstructionSuccessful = false;
+
+			IPv4Addr = new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize);
+
+			if (IPv4Addr != nullptr)
+			{
+				if (IPv4Addr->IsConstructionSuccessful)
+				{
+					IsConstructionSuccessful = true;
+				}
+				else
+				{
+					delete IPv4Addr;
+				}
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddr!");
+			}
+		}
+
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(true)
+		{
+			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
+
+			IsConstructionSuccessful = false;
+
+			IPv6Addr = new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize);
+
+			if (IPv6Addr != nullptr)
+			{
+				if (IPv6Addr->IsConstructionSuccessful)
+				{
+					IsConstructionSuccessful = true;
+				}
+				else
+				{
+					delete IPv6Addr;
+				}
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddr!");
+			}
+		}
+
+		~NetAddr()
+		{
+			Essenbp::WriteLogToFile("\n Destructing NetAddr!");
+			if (IsConstructionSuccessful)
+			{				
+				if (IPv4Addr != nullptr)
+				{
+					delete IPv4Addr;
+				
+				}
+				if (IPv6Addr != nullptr)
+				{
+					delete IPv6Addr;
+				}
+
+				IPv4Addr = nullptr;
+				IPv6Addr = nullptr;
+				IsConstructionSuccessful = false;
+			}
+		}
+	};
+
+	//NOTE: A List of NetAddar(With const values for Construction)
+	struct NetAddrArray
 	{
 	private:
-		ClientOrderIPv4** ListOfClientsIPv4 = nullptr;
-		ClientOrderIPv6** ListOfClientsIPv6 = nullptr;
-		uint64_t TotalNumberOfClientsIPv4 = 0;
-		uint64_t TotalNumberOfClientsIPv6 = 0;
+		NetAddr** ArrayOfNetAddr = nullptr;
+		uint64_t TotalNumberOfNetAddr = 0;
 
-		const uint64_t MaximumUnusedSpots = 0;//Default is 2048, If there are More than or Equal to 2048 Spots free spots the entire ClintOrderList will be Reordered...
+		const uint64_t MaximumFreeSpotsInArray = 0;//Default is 2048, If there are More than or Equal to 2048 Spots free spots the entire NetAddrArray will be Reordered...
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
-		uint64_t* UnusedClientpotIPv4 = nullptr;
-		uint64_t* UnusedClientpotIPv6 = nullptr;
-		uint64_t TotalNumberOfUnusedClientSpotIPv4 = 0;
-		uint64_t TotalNumberOfUnusedClientSpotIPv6 = 0;
+		//uint64_t* UnusedClientpotIPv4 = nullptr;
+		uint64_t* FreeNetAddarSpotsInArray = nullptr;
+		uint64_t TotalNumberOfFreeNetAddarSpotsInArray = 0;//TotalNumberOfFreeNetAddrSpotsInArray = MaximumFreeSpotsInArray + 1// +1 is because 0th element is reserved...
+		//uint64_t TotalNumberOfUnusedClientSpotIPv6 = 0;
 
 		bool IsConstructionSuccessful = false;
 
+		//PENDING make Removing 0th Element Impossible
+		//PENDING make Retreiving 0th Element Impossible
+		//PENDING 0th Element set it to server or something
+
 	public:
-		ClientOrderList(uint64_t ArgMaximumUnusedSpots, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : MaximumUnusedSpots(ArgMaximumUnusedSpots), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
+		NetAddrArray(uint64_t ArgMaximumFreeSpotsInArray, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : MaximumFreeSpotsInArray(ArgMaximumFreeSpotsInArray), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
-			Essenbp::WriteLogToFile("\n Constructing ClientOrderList!");
+			Essenbp::WriteLogToFile("\n Constructing NetAddrArray!");
 
-			ListOfClientsIPv4 = nullptr;
-			ListOfClientsIPv6 = nullptr;
-			TotalNumberOfClientsIPv4 = 0;
-			TotalNumberOfClientsIPv6 = 0;
+			ArrayOfNetAddr = nullptr;
+			TotalNumberOfNetAddr = 0;
 
-			UnusedClientpotIPv4 = nullptr;
-			UnusedClientpotIPv6 = nullptr;
-			TotalNumberOfUnusedClientSpotIPv4 = 0;
-			TotalNumberOfUnusedClientSpotIPv6 = 0;
+			FreeNetAddarSpotsInArray = nullptr;
+			TotalNumberOfFreeNetAddarSpotsInArray = 0;
 
-			IsConstructionSuccessful = true;
+			FreeNetAddarSpotsInArray = (uint64_t*)calloc((MaximumFreeSpotsInArray + 1), sizeof(uint64_t));
+			if (FreeNetAddarSpotsInArray == nullptr)
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaximumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for FreeNetAddarSpotsInArray In: NetAddrArray!\n");
+			}
+			else
+			{
+				Essenbp::Malloc_PointerToArrayOfPointers((void***)&ArrayOfNetAddr, (MaximumFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
+				if (!IsConstructionSuccessful)
+				{
+					free(FreeNetAddarSpotsInArray);
+					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaximumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for ArrayOfNetAddr In: NetAddrArray!\n");
+				}
+				else
+				{
+					for (uint64_t i = 0; i < (MaximumFreeSpotsInArray + 1); ++i)
+					{
+						FreeNetAddarSpotsInArray[i] = MaximumFreeSpotsInArray - i;
+						ArrayOfNetAddr[i] = nullptr;
+					}
+					TotalNumberOfFreeNetAddarSpotsInArray = MaximumFreeSpotsInArray + 1;
+				}
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddrArray!");
+			}
 		}
 
-		void AddClientIPv4(SOCKET ClientSocket, sockaddr_in ClientAddress, bool& IsSuccessful)
+		void AddNetAddr(SOCKET Socket, sockaddr_in Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddNetAddr Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
-				if (TotalNumberOfClientsIPv4 > 0)
+				//Spot Array Number 0 Is Reserved
+				if (TotalNumberOfFreeNetAddarSpotsInArray > 1)
 				{
-					if (TotalNumberOfClientsIPv4 == 1)
-					{
-						ListOfClientsIPv4[0] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-						if (ListOfClientsIPv4[0] == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for ListOfClientsIPv4[0] in AddClientIPv4 In: ClientOrderList!\n");
-						}
-						else
-						{
-							free(UnusedClientpotIPv4);
-							UnusedClientpotIPv4 = nullptr;
-							IsSuccessful = true;
-						}
-					}
-					else
-					{
-						uint64_t* TEMPUnusedClientpotIPv4 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv4 - 1);
-						if (TEMPUnusedClientpotIPv4 == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv4 - 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv4 In AddClientIPv4 In: ClientOrderList!\n");
-						}
-						else
-						{
-							ListOfClientsIPv4[UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-							if (ListOfClientsIPv4[UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]] == nullptr)
-							{
-								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for ListOfClientsIPv4[" + std::to_string(UnusedClientpotIPv4[(TotalNumberOfUnusedClientSpotIPv4 - 1)]) + "] in AddClientIPv4 In: ClientOrderList!\n");
-							}
-							else
-							{
-								TotalNumberOfUnusedClientSpotIPv4 = TotalNumberOfUnusedClientSpotIPv4 - 1;
-								for (uint64_t i = 0; i < TotalNumberOfUnusedClientSpotIPv4; ++i)
-								{
-									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv4[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv4 - 1)
-									//But Evrything is Correct here? Buffer overrun is impossible!
-									TEMPUnusedClientpotIPv4[i] = UnusedClientpotIPv4[i];
-								}
-								free(UnusedClientpotIPv4);
-								UnusedClientpotIPv4 = TEMPUnusedClientpotIPv4;
-								IsSuccessful = true;
-							}
-						}
-					}
-				}
-
-				ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
-				Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 + 1), sizeof(ClientOrderIPv4*), IsSuccessful);
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 + 1) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In AddClientIPv4 In: ClientOrderList!\n");
-				}
-				else
-				{
-					TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] = new ClientOrderIPv4(ClientSocket, TotalNumberOfClientsIPv4, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-					if (TEMPListOfClientsIPv4[TotalNumberOfClientsIPv4] == nullptr)
+					//ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
+					ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+					if (ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] == nullptr)
 					{
 						IsSuccessful = false;
 					}
 					else
 					{
-						for (uint64_t i = 0; i < TotalNumberOfClientsIPv4; ++i)
+						if (ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 						{
-							TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[i];
+							IsSuccessful = false;
+							delete ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]];
+							ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] = nullptr;
 						}
-
-						free(ListOfClientsIPv4);
-						ListOfClientsIPv4 = TEMPListOfClientsIPv4;
-						TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 + 1;
+						else
+						{
+							IsSuccessful = true;
+							FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)] = 0;//Reseted
+							TotalNumberOfFreeNetAddarSpotsInArray = TotalNumberOfFreeNetAddarSpotsInArray - 1;
+							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+						}
 					}
-
-					if (!IsSuccessful)
+				}
+				else
+				{
+					FreeNetAddarSpotsInArray = (uint64_t*)calloc((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1), sizeof(uint64_t));
+					if (FreeNetAddarSpotsInArray == nullptr)
 					{
-						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv4)) + " Byes Of Memory for TEMPListOfClientsIPv4[" + std::to_string(TotalNumberOfClientsIPv4) + "] in AddClientIPv4 In: ClientOrderList!\n");
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for FreeNetAddarSpotsInArray In: NetAddrArray!\n");
+					}
+					else
+					{
+						NetAddr** TEMPArrayOfNetAddr = nullptr;
+						Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
+						if (!IsConstructionSuccessful)
+						{
+							free(FreeNetAddarSpotsInArray);
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr In: NetAddrArray!\n");
+						}
+						else
+						{
+							//This Copies Previous
+							for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)
+							{
+								TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[i];
+							}
+
+							FreeNetAddarSpotsInArray[0] = 0;
+							for (uint64_t i = 1; i < MaximumFreeSpotsInArray + 1; ++i)
+							{
+								FreeNetAddarSpotsInArray[i] = TotalNumberOfNetAddr + MaximumFreeSpotsInArray - i;
+							}
+
+							//Sets nullptr for Allocated Space
+							for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1); ++i)
+							{
+								TEMPArrayOfNetAddr[i] = nullptr;
+							}
+
+							TotalNumberOfFreeNetAddarSpotsInArray = MaximumFreeSpotsInArray + 1;
+							free(ArrayOfNetAddr);
+							ArrayOfNetAddr = TEMPArrayOfNetAddr;
+						}
+						if (IsSuccessful)
+						{
+							AddNetAddr(Socket, Address, IsSuccessful);//PENDING Check this Function Upon Testing
+						}
 					}
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddClientIPv4() Failed in ClientOrderList!");
+				Essenbp::WriteLogToFile("\n Error AddNetAddr() Failed in NetAddrArray!");
 			}
 		}
 
-		void AddClientIPv6(SOCKET ClientSocket, sockaddr_in6 ClientAddress, bool& IsSuccessful)
+		void AddNetAddr(SOCKET Socket, sockaddr_in6 Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling AddClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling AddNetAddr Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
-				if (TotalNumberOfClientsIPv6 > 0)
+				//Spot Array Number 0 Is Reserved
+				if (TotalNumberOfFreeNetAddarSpotsInArray > 1)
 				{
-					if (TotalNumberOfClientsIPv6 == 1)
-					{
-						ListOfClientsIPv6[0] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-						if (ListOfClientsIPv6[0] == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for ListOfClientsIPv6[0] in AddClientIPv6 In: ClientOrderList!\n");
-						}
-						else
-						{
-							free(UnusedClientpotIPv6);
-							UnusedClientpotIPv6 = nullptr;
-							IsSuccessful = true;
-						}
-					}
-					else
-					{
-						uint64_t* TEMPUnusedClientpotIPv6 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv6 - 1);
-						if (TEMPUnusedClientpotIPv6 == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv6 - 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv6 In AddClientIPv6 In: ClientOrderList!\n");
-						}
-						else
-						{
-							ListOfClientsIPv6[UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-							if (ListOfClientsIPv6[UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]] == nullptr)
-							{
-								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for ListOfClientsIPv6[" + std::to_string(UnusedClientpotIPv6[(TotalNumberOfUnusedClientSpotIPv6 - 1)]) + "] in AddClientIPv6 In: ClientOrderList!\n");
-							}
-							else
-							{
-								TotalNumberOfUnusedClientSpotIPv6 = TotalNumberOfUnusedClientSpotIPv6 - 1;
-								for (uint64_t i = 0; i < TotalNumberOfUnusedClientSpotIPv6; ++i)
-								{
-									//Visual Studio 2019 Is saying Buffer Overrun by 16 bytes for TEMPUnusedClientpotIPv6[i], the writable size is only (TotalNumberOfUnusedClientSpotIPv6 - 1)
-									//But Evrything is Correct here? Buffer overrun is impossible!
-									TEMPUnusedClientpotIPv6[i] = UnusedClientpotIPv6[i];
-								}
-								free(UnusedClientpotIPv6);
-								UnusedClientpotIPv6 = TEMPUnusedClientpotIPv6;
-								IsSuccessful = true;
-							}
-						}
-					}
-				}
-
-				ClientOrderIPv6** TEMPListOfClientsIPv6 = nullptr;
-				Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 + 1), sizeof(ClientOrderIPv6*), IsSuccessful);
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 + 1) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In AddClientIPv6 In: ClientOrderList!\n");
-				}
-				else
-				{
-					TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] = new ClientOrderIPv6(ClientSocket, TotalNumberOfClientsIPv6, ClientAddress, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-					if (TEMPListOfClientsIPv6[TotalNumberOfClientsIPv6] == nullptr)
+					//ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
+					ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+					if (ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] == nullptr)
 					{
 						IsSuccessful = false;
 					}
 					else
 					{
-						for (uint64_t i = 0; i < TotalNumberOfClientsIPv6; ++i)
+						if (ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 						{
-							TEMPListOfClientsIPv6[i] = ListOfClientsIPv6[i];
+							IsSuccessful = false;
+							delete ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]];
+							ArrayOfNetAddr[FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)]] = nullptr;
 						}
-
-						free(ListOfClientsIPv6);
-						ListOfClientsIPv6 = TEMPListOfClientsIPv6;
-						TotalNumberOfClientsIPv6 = TotalNumberOfClientsIPv6 + 1;
+						else
+						{
+							IsSuccessful = true;
+							FreeNetAddarSpotsInArray[(TotalNumberOfFreeNetAddarSpotsInArray - 1)] = 0;//Reseted
+							TotalNumberOfFreeNetAddarSpotsInArray = TotalNumberOfFreeNetAddarSpotsInArray - 1;
+							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+						}
 					}
-
-					if (!IsSuccessful)
+				}
+				else
+				{
+					FreeNetAddarSpotsInArray = (uint64_t*)calloc((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1), sizeof(uint64_t));
+					if (FreeNetAddarSpotsInArray == nullptr)
 					{
-						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(ClientOrderIPv6)) + " Byes Of Memory for TEMPListOfClientsIPv6[" + std::to_string(TotalNumberOfClientsIPv6) + "] in AddClientIPv6 In: ClientOrderList!\n");
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for FreeNetAddarSpotsInArray In: NetAddrArray!\n");
+					}
+					else
+					{
+						NetAddr** TEMPArrayOfNetAddr = nullptr;
+						Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
+						if (!IsConstructionSuccessful)
+						{
+							free(FreeNetAddarSpotsInArray);
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr In: NetAddrArray!\n");
+						}
+						else
+						{
+							//This Copies Previous
+							for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)
+							{
+								TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[i];
+							}
+
+							FreeNetAddarSpotsInArray[0] = 0;
+							for (uint64_t i = 1; i < MaximumFreeSpotsInArray + 1; ++i)
+							{
+								FreeNetAddarSpotsInArray[i] = TotalNumberOfNetAddr + MaximumFreeSpotsInArray - i;
+							}
+
+							//Sets nullptr for Allocated Space
+							for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MaximumFreeSpotsInArray + 1); ++i)
+							{
+								TEMPArrayOfNetAddr[i] = nullptr;
+							}
+
+							TotalNumberOfFreeNetAddarSpotsInArray = MaximumFreeSpotsInArray + 1;
+							free(ArrayOfNetAddr);
+							ArrayOfNetAddr = TEMPArrayOfNetAddr;
+						}
+						if (IsSuccessful)
+						{
+							AddNetAddr(Socket, Address, IsSuccessful);//PENDING Check this Function Upon Testing
+						}
 					}
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddClientIPv6() Failed in ClientOrderList!");
+				Essenbp::WriteLogToFile("\n Error AddNetAddr() Failed in NetAddrArray!");
 			}
 		}
 
+		//PENDING change RemoveClientIPv4 And RemoveClientIPv4 to RemoveNetAddr
 		void RemoveClientIPv4(uint64_t ClientNumber, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv4 Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
 				if (ClientNumber < TotalNumberOfClientsIPv4)
 				{
-					if (ListOfClientsIPv4[ClientNumber] == nullptr)
+					if (ArrayOfNetAddr[ClientNumber] == nullptr)
 					{
-						Essenbp::WriteLogToFile("\n Error ClientNumber " + std::to_string(ClientNumber) + " Is Already Removeded from ListOfClientsIPv4 In RemoveClientIPv4 In: ClientOrderList!\n");
+						Essenbp::WriteLogToFile("\n Error ClientNumber " + std::to_string(ClientNumber) + " Is Already Removeded from ArrayOfNetAddr In RemoveClientIPv4 In: NetAddrArray!\n");
 						IsSuccessful = false;
 					}
 					else
 					{
-						if (ListOfClientsIPv4[ClientNumber]->ClientSocket != NULL)
+						if (ArrayOfNetAddr[ClientNumber]->ClientSocket != NULL)
 						{
-							closesocket(ListOfClientsIPv4[ClientNumber]->ClientSocket);
+							closesocket(ArrayOfNetAddr[ClientNumber]->ClientSocket);
 						}
-						delete ListOfClientsIPv4[ClientNumber];
-						ListOfClientsIPv4[ClientNumber] = nullptr;
+						delete ArrayOfNetAddr[ClientNumber];
+						ArrayOfNetAddr[ClientNumber] = nullptr;
 						uint64_t* TEMPUnusedClientpotIPv4 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv4 + 1);
 						if (TEMPUnusedClientpotIPv4 == nullptr)
 						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv4 + 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv4 In RemoveClientIPv4 In: ClientOrderList!\n");
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv4 + 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv4 In RemoveClientIPv4 In: NetAddrArray!\n");
 						}
 						else
 						{
@@ -1079,11 +1180,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 							if (TotalNumberOfUnusedClientSpotIPv4 > MaximumUnusedSpots)
 							{
-								ClientOrderIPv4** TEMPListOfClientsIPv4 = nullptr;
-								Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv4, (TotalNumberOfClientsIPv4 - TotalNumberOfUnusedClientSpotIPv4), sizeof(ClientOrderIPv4*), IsSuccessful);
+								ClientOrderIPv4** TEMPArrayOfNetAddr = nullptr;
+								Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfClientsIPv4 - TotalNumberOfUnusedClientSpotIPv4), sizeof(ClientOrderIPv4*), IsSuccessful);
 								if (!IsSuccessful)
 								{
-									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 - TotalNumberOfUnusedClientSpotIPv4) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPListOfClientsIPv4 In RemoveClientIPv4 In: ClientOrderList!\n");
+									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv4 - TotalNumberOfUnusedClientSpotIPv4) * sizeof(ClientOrderIPv4*)) + " Byes Of Memory for TEMPArrayOfNetAddr In RemoveClientIPv4 In: NetAddrArray!\n");
 								}
 								else
 								{
@@ -1093,29 +1194,29 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									{
 										if (ClientNumber == i)
 										{
-											delete ListOfClientsIPv4[j];
+											delete ArrayOfNetAddr[j];
 											j = j + 1;
 										}
 										else
 										{
 											while (true)
 											{
-												if (ListOfClientsIPv4[j] == nullptr)
+												if (ArrayOfNetAddr[j] == nullptr)
 												{
-													j = j + 1;	
+													j = j + 1;
 												}
 												else
-												{													
-													TEMPListOfClientsIPv4[i] = ListOfClientsIPv4[j];
+												{
+													TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[j];
 													break;
 												}
-											}											
+											}
 										}
 										j = j + 1;
 									}
 
-									free(ListOfClientsIPv4);
-									ListOfClientsIPv4 = TEMPListOfClientsIPv4;//PENDING send Updated Client Number to Each Client
+									free(ArrayOfNetAddr);
+									ArrayOfNetAddr = TEMPArrayOfNetAddr;//PENDING send Updated Client Number to Each Client
 									TotalNumberOfClientsIPv4 = TotalNumberOfClientsIPv4 - 1;
 
 									if (UnusedClientpotIPv4 != nullptr)
@@ -1123,7 +1224,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 										free(UnusedClientpotIPv4);
 										UnusedClientpotIPv4 = nullptr;
 										TotalNumberOfUnusedClientSpotIPv4 = 0;
-									}									
+									}
 								}
 							}
 						}
@@ -1131,13 +1232,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in RemoveClientIPv4 In: ClientOrderList!\n");
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in RemoveClientIPv4 In: NetAddrArray!\n");
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error RemoveClientIPv4() Failed in ClientOrderList!");
+				Essenbp::WriteLogToFile("\n Error RemoveClientIPv4() Failed in NetAddrArray!");
 			}
 		}
 
@@ -1147,7 +1248,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling RemoveClientIPv6 Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
@@ -1155,7 +1256,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (ListOfClientsIPv6[ClientNumber] == nullptr)
 					{
-						Essenbp::WriteLogToFile("\n Error ClientNumber " + std::to_string(ClientNumber) + " Is Already Removeded from ListOfClientsIPv6 In RemoveClientIPv6 In: ClientOrderList!\n");
+						Essenbp::WriteLogToFile("\n Error ClientNumber " + std::to_string(ClientNumber) + " Is Already Removeded from ListOfClientsIPv6 In RemoveClientIPv6 In: NetAddrArray!\n");
 						IsSuccessful = false;
 					}
 					else
@@ -1168,7 +1269,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						uint64_t* TEMPUnusedClientpotIPv6 = (uint64_t*)malloc(TotalNumberOfUnusedClientSpotIPv6 + 1);
 						if (TEMPUnusedClientpotIPv6 == nullptr)
 						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv6 + 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv6 In RemoveClientIPv6 In: ClientOrderList!\n");
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfUnusedClientSpotIPv6 + 1) * sizeof(uint64_t*)) + " Byes Of Memory for UnusedClientpotIPv6 In RemoveClientIPv6 In: NetAddrArray!\n");
 						}
 						else
 						{
@@ -1206,7 +1307,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPListOfClientsIPv6, (TotalNumberOfClientsIPv6 - TotalNumberOfUnusedClientSpotIPv6), sizeof(ClientOrderIPv6*), IsSuccessful);
 								if (!IsSuccessful)
 								{
-									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 - TotalNumberOfUnusedClientSpotIPv6) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In RemoveClientIPv6 In: ClientOrderList!\n");
+									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfClientsIPv6 - TotalNumberOfUnusedClientSpotIPv6) * sizeof(ClientOrderIPv6*)) + " Byes Of Memory for TEMPListOfClientsIPv6 In RemoveClientIPv6 In: NetAddrArray!\n");
 								}
 								else
 								{
@@ -1254,13 +1355,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in RemoveClientIPv6 In: ClientOrderList!\n");
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in RemoveClientIPv6 In: NetAddrArray!\n");
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error RemoveClientIPv6() Failed in ClientOrderList!");
+				Essenbp::WriteLogToFile("\n Error RemoveClientIPv6() Failed in NetAddrArray!");
 			}
 		}
 
@@ -1270,18 +1371,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv4 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv4 Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
 				if (ClientNumber < TotalNumberOfClientsIPv4)
 				{
-					*ReturnClientIPv4 = ListOfClientsIPv4[ClientNumber];
+					*ReturnClientIPv4 = ArrayOfNetAddr[ClientNumber];
 					IsSuccessful = true;
 				}
 				else
 				{
-					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in GetClientIPv4 In: ClientOrderList!\n");
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv4 Clients Present! in GetClientIPv4 In: NetAddrArray!\n");
 				}
 			}
 		}
@@ -1292,7 +1393,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv6 Without Constructing the struct In: ClientOrderList!\n");
+				Essenbp::WriteLogToFile("\n Error Calling GetClientIPv6 Without Constructing the struct In: NetAddrArray!\n");
 			}
 			else
 			{
@@ -1303,7 +1404,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in GetClientIPv6 In: ClientOrderList!\n");
+					Essenbp::WriteLogToFile("\n Error ClientNumber + 1 Exceeds the Number Of IPv6 Clients Present! in GetClientIPv6 In: NetAddrArray!\n");
 				}
 			}
 		}
@@ -1318,26 +1419,32 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			return TotalNumberOfClientsIPv6;
 		}
 
-		~ClientOrderList()
+		~NetAddrArray()
 		{
-			Essenbp::WriteLogToFile("\n Destructing ClientOrderList!");
+			Essenbp::WriteLogToFile("\n Destructing NetAddrArray!");
 			if (IsConstructionSuccessful)
 			{
-				for (uint64_t i = 0; i < TotalNumberOfClientsIPv4; ++i)
-				{
-					delete ListOfClientsIPv4[i];
-				}
-				for (uint64_t i = 0; i < TotalNumberOfClientsIPv6; ++i)
-				{
-					delete ListOfClientsIPv6[i];
-				}
-				free(ListOfClientsIPv4);
-				free(ListOfClientsIPv6);
 
-				ListOfClientsIPv4 = nullptr;
-				ListOfClientsIPv6 = nullptr;
-				TotalNumberOfClientsIPv4 = 0;
-				TotalNumberOfClientsIPv6 = 0;
+				if (ArrayOfNetAddr != nullptr)
+				{
+					for (uint64_t i = 0; i < TotalNumberOfNetAddr; ++i)
+					{
+						if (ArrayOfNetAddr[i] != nullptr)
+						{
+							delete ArrayOfNetAddr[i];
+							ArrayOfNetAddr[i] = nullptr;
+						}
+					}
+					free(ArrayOfNetAddr);
+				}
+				if (FreeNetAddarSpotsInArray != nullptr)
+				{
+					free(FreeNetAddarSpotsInArray);
+					FreeNetAddarSpotsInArray = nullptr;
+				}
+
+				TotalNumberOfFreeNetAddarSpotsInArray = 0;
+				TotalNumberOfNetAddr = 0;
 
 				IsConstructionSuccessful = false;
 			}
