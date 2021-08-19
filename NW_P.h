@@ -929,18 +929,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				ReservedNetAddarSpotsInArray = (uint64_t*)calloc((MinimumFreeSpotsInArray + 1), sizeof(uint64_t));
+				ReservedNetAddarSpotsInArray = (uint64_t*)calloc((MinimumFreeSpotsInArray), sizeof(uint64_t));
 				if (ReservedNetAddarSpotsInArray == nullptr)
 				{
-					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MinimumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
+					Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MinimumFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
 				}
 				else
 				{
-					UnderflowedNetAddarSpotsInArray = (uint64_t*)calloc((MinimumFreeSpotsInArray + 1), sizeof(uint64_t));
+					UnderflowedNetAddarSpotsInArray = (uint64_t*)calloc((MaximumFreeSpotsInArray), sizeof(uint64_t));
 					if (UnderflowedNetAddarSpotsInArray == nullptr)
 					{
 						free(ReservedNetAddarSpotsInArray);
-						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MinimumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for UnderflowedNetAddarSpotsInArray In: NetAddrArray!\n");
+						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaximumFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for UnderflowedNetAddarSpotsInArray In: NetAddrArray!\n");
 					}
 					else
 					{
@@ -952,21 +952,19 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for ArrayOfNetAddr In: NetAddrArray!\n");
 						}
 						else
-						{
-							ArrayOfNetAddr[0] = BaseNetAddr;
-							ReservedNetAddarSpotsInArray[0] = 0;							
-
-							for (uint64_t i = 1; i < (MinimumFreeSpotsInArray + 1); ++i)
+						{		
+							for (uint64_t i = 0; i < MinimumFreeSpotsInArray; ++i)
 							{
 								ArrayOfNetAddr[i] = nullptr;
-								ReservedNetAddarSpotsInArray[i] = (MinimumFreeSpotsInArray + 1) - i;
+								ReservedNetAddarSpotsInArray[i] = MinimumFreeSpotsInArray - i;
 							}
+							ArrayOfNetAddr[0] = BaseNetAddr;
 
 							for (uint64_t i = 0; i < MaximumFreeSpotsInArray; ++i)
 							{
 								UnderflowedNetAddarSpotsInArray[i] = 0;
 							}
-							TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray + 1;
+							TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 							TotalNumberOfUnderflowedNetAddarSpotsInArray = 0;
 						}
 					}
@@ -994,19 +992,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[0], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 					if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] != nullptr)
 					{
-						IsSuccessful = false;
-					}
-					else
-					{
 						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]]->IsConstructionSuccessful == false)
 						{
-							IsSuccessful = false;
 							delete ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]];
 							ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] = nullptr;
 						}
 						else
 						{
-							IsSuccessful = true;
 							uint64_t i = 0;
 							for (i = 0; i < TotalNumberOfUnderflowedNetAddarSpotsInArray; ++i)
 							{
@@ -1016,21 +1008,19 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 							TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray - 1;
 							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+
+							IsSuccessful = true;
 						}
 					}
 				}
 				else
 				{
 					//Spot Array Number 0 Is Reserved
-					if (TotalNumberOfReservedNetAddarSpotsInArray > 1)
+					if (TotalNumberOfReservedNetAddarSpotsInArray > 0)
 					{
 						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
 						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
-						{
-							IsSuccessful = false;
-						}
-						else
 						{
 							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 							{
@@ -1040,55 +1030,53 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							}
 							else
 							{
-								IsSuccessful = true;
 								ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
 								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray - 1;
 								TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+
+								IsSuccessful = true;
 							}
 						}
 					}
 					else
 					{
-						ReservedNetAddarSpotsInArray = (uint64_t*)calloc((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(uint64_t));
+						ReservedNetAddarSpotsInArray = (uint64_t*)calloc(MinimumFreeSpotsInArray, sizeof(uint64_t));
 						if (ReservedNetAddarSpotsInArray == nullptr)
 						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MinimumFreeSpotsInArray * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray in AddNetAddr In: NetAddrArray!\n");
 						}
 						else
-						{
+						{//PENDING CHECK THIS
 							NetAddr** TEMPArrayOfNetAddr = nullptr;
-							Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
-							if (!IsConstructionSuccessful)
+							Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(NetAddr*), IsSuccessful);
+							if (!IsSuccessful)
 							{
 								free(ReservedNetAddarSpotsInArray);
-								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr In: NetAddrArray!\n");
+								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr in AddNetAddr In: NetAddrArray!\n");
 							}
 							else
 							{
 								//This Copies Previous
-								for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)
+								for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)//NOTE: Array Starts from 0 to n Normally but, 0 is reserved so i have used, 1 to n + 1 length
 								{
 									TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[i];
 								}
 
-								ReservedNetAddarSpotsInArray[0] = 0;
-								for (uint64_t i = 1; i < MinimumFreeSpotsInArray + 1; ++i)
-								{
-									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) - i;
-								}
-
 								//Sets nullptr for Allocated Space
-								for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1); ++i)
+								for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MinimumFreeSpotsInArray); ++i)
 								{
 									TEMPArrayOfNetAddr[i] = nullptr;
 								}
 
-								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray + 1;
+								for (uint64_t i = 0; i < MinimumFreeSpotsInArray; ++i)
+								{
+									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
+								}								
+
+								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 								free(ArrayOfNetAddr);
 								ArrayOfNetAddr = TEMPArrayOfNetAddr;
-							}
-							if (IsSuccessful)
-							{
+
 								AddNetAddr(Socket, Address, IsSuccessful);//PENDING Check this Function Upon Testing
 							}
 						}
@@ -1117,19 +1105,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[0], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 					if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] != nullptr)
 					{
-						IsSuccessful = false;
-					}
-					else
-					{
 						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]]->IsConstructionSuccessful == false)
 						{
-							IsSuccessful = false;
 							delete ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]];
 							ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] = nullptr;
 						}
 						else
 						{
-							IsSuccessful = true;
 							uint64_t i = 0;
 							for (i = 0; i < TotalNumberOfUnderflowedNetAddarSpotsInArray; ++i)
 							{
@@ -1139,21 +1121,19 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 							TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray - 1;
 							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+
+							IsSuccessful = true;
 						}
 					}
 				}
 				else
 				{
 					//Spot Array Number 0 Is Reserved
-					if (TotalNumberOfReservedNetAddarSpotsInArray > 1)
+					if (TotalNumberOfReservedNetAddarSpotsInArray > 0)
 					{
 						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
 						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
-						{
-							IsSuccessful = false;
-						}
-						else
 						{
 							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 							{
@@ -1163,55 +1143,53 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							}
 							else
 							{
-								IsSuccessful = true;
 								ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
 								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray - 1;
 								TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
+
+								IsSuccessful = true;
 							}
 						}
 					}
 					else
 					{
-						ReservedNetAddarSpotsInArray = (uint64_t*)calloc((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(uint64_t));
+						ReservedNetAddarSpotsInArray = (uint64_t*)calloc(MinimumFreeSpotsInArray, sizeof(uint64_t));
 						if (ReservedNetAddarSpotsInArray == nullptr)
 						{
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
+							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MinimumFreeSpotsInArray * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray in AddNetAddr In: NetAddrArray!\n");
 						}
 						else
 						{
 							NetAddr** TEMPArrayOfNetAddr = nullptr;
-							Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
-							if (!IsConstructionSuccessful)
+							Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(NetAddr*), IsSuccessful);
+							if (!IsSuccessful)
 							{
 								free(ReservedNetAddarSpotsInArray);
-								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr In: NetAddrArray!\n");
+								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr in AddNetAddr In: NetAddrArray!\n");
 							}
 							else
 							{
 								//This Copies Previous
-								for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)
+								for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)//NOTE: Array Starts from 0 to n Normally but, 0 is reserved so i have used, 1 to n + 1 length
 								{
 									TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[i];
 								}
 
-								ReservedNetAddarSpotsInArray[0] = 0;
-								for (uint64_t i = 1; i < MinimumFreeSpotsInArray + 1; ++i)
-								{
-									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) - i;
-								}
-
 								//Sets nullptr for Allocated Space
-								for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1); ++i)
+								for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MinimumFreeSpotsInArray); ++i)
 								{
 									TEMPArrayOfNetAddr[i] = nullptr;
 								}
 
-								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray + 1;
+								for (uint64_t i = 0; i < MinimumFreeSpotsInArray; ++i)
+								{
+									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
+								}
+
+								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 								free(ArrayOfNetAddr);
 								ArrayOfNetAddr = TEMPArrayOfNetAddr;
-							}
-							if (IsSuccessful)
-							{
+
 								AddNetAddr(Socket, Address, IsSuccessful);//PENDING Check this Function Upon Testing
 							}
 						}
@@ -1228,8 +1206,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//PENDING COMPLETE THIS
 		//NOTE: 0th Element Can't be removed it is reserved
 		//NOTE: Only 1 to TotalNumberOfNetAddr(== (n * MaximumFreeSpotsInArray) + 1) can be removed
-		void RemoveNetAddr(uint64_t ArrayNumber, bool& IsSuccessful)
+		void RemoveNetAddr(uint64_t ArrayNumber, bool &IsArrayReordered, bool& IsSuccessful)
 		{
+			IsArrayReordered = false;
 			IsSuccessful = false;
 			if (!IsConstructionSuccessful)
 			{
@@ -1257,25 +1236,70 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						}
 						else
 						{
-							if (TotalNumberOfReservedNetAddarSpotsInArray >= _RENAMEThisTEMPNAME_)//PENDING WRONG _RENAMEThisTEMPNAME_ is Wrong Change it!
+							delete ArrayOfNetAddr[ArrayNumber];
+
+							//Reorders the the Underflowed Array
+							uint64_t i = 0;
+							for (i = i; i < TotalNumberOfUnderflowedNetAddarSpotsInArray; ++i)
 							{
-								//PENDING COMPLETE THIS
+								if (UnderflowedNetAddarSpotsInArray[i] > ArrayNumber)
+								{
+									for (uint64_t j = TotalNumberOfUnderflowedNetAddarSpotsInArray; j > i; --j)
+									{
+										UnderflowedNetAddarSpotsInArray[j] = UnderflowedNetAddarSpotsInArray[j - 1];
+									}
+									break;
+								}
+							}
+							UnderflowedNetAddarSpotsInArray[i] = ArrayNumber;
+							TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray + 1;
+							TotalNumberOfNetAddr = TotalNumberOfNetAddr - 1;
+
+							if (MaximumFreeSpotsInArray > TotalNumberOfUnderflowedNetAddarSpotsInArray)
+							{								
+								IsSuccessful = true;// No Need to reorder
 							}
 							else
 							{
-								ArrayOfNetAddr[ArrayNumber] == nullptr;
-								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray + 1;
-
-								uint64_t i = ArrayNumber;
-								i = i % _RENAMEThisTEMPNAME_;
-								i = (i == 0) ? _RENAMEThisTEMPNAME_ : i;//if(i == 0){ i = _RENAMEThisTEMPNAME_; }else{ i = i; }
-
-								for (i = i; i < MaximumFreeSpotsInArray + 1; ++i)
+								//PENDING Reorders this Enitre struct
+								ReservedNetAddarSpotsInArray = (uint64_t*)calloc(MinimumFreeSpotsInArray, sizeof(uint64_t));
+								if (ReservedNetAddarSpotsInArray == nullptr)
 								{
-									ReservedNetAddarSpotsInArray[i] = TotalNumberOfNetAddr + MaximumFreeSpotsInArray - i;
+									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(MinimumFreeSpotsInArray * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray in AddNetAddr In: NetAddrArray!\n");
 								}
-								ReservedNetAddarSpotsInArray
-								//PENDING COMPLETE THIS
+								else
+								{
+									NetAddr** TEMPArrayOfNetAddr = nullptr;
+									Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1), sizeof(NetAddr*), IsSuccessful);
+									if (!IsSuccessful)
+									{
+										free(ReservedNetAddarSpotsInArray);
+										Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((TotalNumberOfNetAddr + MinimumFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for TEMPArrayOfNetAddr in AddNetAddr In: NetAddrArray!\n");
+									}
+									else
+									{
+										//This Copies Previous
+										for (uint64_t i = 0; i < TotalNumberOfNetAddr + 1; ++i)//NOTE: Array Starts from 0 to n Normally but, 0 is reserved so i have used, 1 to n + 1 length
+										{
+											TEMPArrayOfNetAddr[i] = ArrayOfNetAddr[i];
+										}
+
+										//Sets nullptr for Allocated Space
+										for (uint64_t i = TotalNumberOfNetAddr + 1; i < (TotalNumberOfNetAddr + MinimumFreeSpotsInArray); ++i)
+										{
+											TEMPArrayOfNetAddr[i] = nullptr;
+										}
+
+										for (uint64_t i = 0; i < MinimumFreeSpotsInArray; ++i)
+										{
+											ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
+										}
+
+										TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+										free(ArrayOfNetAddr);
+										ArrayOfNetAddr = TEMPArrayOfNetAddr;
+									}
+								}
 							}
 						}
 					}
