@@ -882,14 +882,12 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	//NOTE: Array Number of 0 Is Reserved, So Array Number Starts from 1 to TotalNumberOfNetAddr(== (n * MaximumFreeSpotsInArray) + 1)
 	//NOTE: Lets say Initially TotalNumberOfNetAddr = (1 * MaximumFreeSpotsInArray) + 1 Once every Spots is Used
 	//NOTE: It will again be Filled with more free SpotsTotalNumberOfNetAddr = (2 * MaximumFreeSpotsInArray) + 1 and So on until buffer overflow...
-	//NOTE: TotalNumberOfReservedNetAddarSpotsInArray is >= _RENAMEThisTEMPNAME_ the Array is Reordered
 	struct NetAddrArray
 	{
 	private:
 		NetAddr** ArrayOfNetAddr = nullptr;
 		uint64_t TotalNumberOfNetAddr = 0;
 
-		//PENDING _RENAMEThisTEMPNAME_ Should be changed...
 		//PENDING make Variable for Removed Numbers which is beyond reserved number like 2048 + n(== > 0)
 		//PENDING check MinumumFreeSpots And Maximum Free Spots
 		const uint64_t MinimumFreeSpotsInArray = 0;//Every Multiple of MinimumFreeSpotsInArray == n * MinimumFreeSpotsInArray the Array Is Reordered Only when Increasing
@@ -899,11 +897,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//uint64_t* UnusedClientpotIPv4 = nullptr;
 		uint64_t* ReservedNetAddarSpotsInArray = nullptr;
-		uint64_t CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = 0;//CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray Or Something Else
-		uint64_t TotalNumberOfReservedNetAddarSpotsInArray = 0;//TotalNumberOfReservedNetAddrSpotsInArray = CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray//
+		uint64_t TotalNumberOfReservedNetAddarSpotsInArray = 0;//TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray Or Something Else
+		uint64_t RemainingNumberOfReservedNetAddarSpotsInArray = 0;//RemainingNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray//
 		uint64_t* UnderflowedNetAddarSpotsInArray = nullptr;
-		uint64_t TotalNumberOfUnderflowedNetAddarSpotsInArray = 0;//TotalNumberOfUnderflowedNetAddrSpotsInArray = 0// when No element is removed from active spot,
+		uint64_t RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;//TotalNumberOfUnderflowedNetAddrSpotsInArray = 0// when No element is removed from active spot,
 		//uint64_t TotalNumberOfUnusedClientSpotIPv6 = 0;
+
+		bool IsArrayReordered = false;//NOTE: Ignore(by setting to true if this is false) if Unique number for client is not required, If Server then send updated client Unique number to client and verify
+		uint64_t* ReorderedArrayNumbers = nullptr;//NOTE: Total Size = n*2*(sizeof(uint64_t)) //PENDING
 
 		bool IsConstructionSuccessful = false;
 
@@ -920,9 +921,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			TotalNumberOfNetAddr = 0;
 
 			ReservedNetAddarSpotsInArray = nullptr;
-			TotalNumberOfReservedNetAddarSpotsInArray = 0;
+			RemainingNumberOfReservedNetAddarSpotsInArray = 0;
 			UnderflowedNetAddarSpotsInArray = nullptr;
-			TotalNumberOfUnderflowedNetAddarSpotsInArray = 0;
+			RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;
 
 			if (MaximumFreeSpotsInArray < MinimumFreeSpotsInArray)
 			{
@@ -965,9 +966,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							{
 								UnderflowedNetAddarSpotsInArray[i] = 0;
 							}
-							CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
-							TotalNumberOfReservedNetAddarSpotsInArray = CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray;
-							TotalNumberOfUnderflowedNetAddarSpotsInArray = 0;
+							TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+							RemainingNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray;
+							RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;
 						}
 					}
 				}
@@ -990,21 +991,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				if (TotalNumberOfUnderflowedNetAddarSpotsInArray > 0)
+				//NOTE: The Spot Array Number 0 Is Reserved
+				if (RemainingNumberOfUnderflowedNetAddarSpotsInArray > 0)
 				{
-					ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-					if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)]] != nullptr)
+					ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+					if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] != nullptr)
 					{
-						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
+						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 						{
 							IsSuccessful = false;
-							delete ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)]];
-							ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = nullptr;
+							delete ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]];
+							ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = nullptr;
 						}
 						else
 						{
-							UnderflowedNetAddarSpotsInArray[(TotalNumberOfUnderflowedNetAddarSpotsInArray - 1)] = 0;//Reseted
-							TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray - 1;
+							UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)] = 0;//Reseted
+							RemainingNumberOfUnderflowedNetAddarSpotsInArray = RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1;
 							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
 
 							IsSuccessful = true;
@@ -1013,27 +1015,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					//Spot Array Number 0 Is Reserved
-					if (TotalNumberOfReservedNetAddarSpotsInArray > 0)
-					{
-						//PENDING USE THIS CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray SOMEHOW
-						uint64_t i = CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray;
-
-
-						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
-						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
+					if (RemainingNumberOfReservedNetAddarSpotsInArray > 0)
+					{	
+						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
+						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
 						{
-							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
+							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 							{
 								IsSuccessful = false;
-								delete ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]];
-								ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = nullptr;
+								delete ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]];
+								ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = nullptr;
 							}
 							else
 							{
-								ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
-								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray - 1;
+								ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
+								RemainingNumberOfReservedNetAddarSpotsInArray = RemainingNumberOfReservedNetAddarSpotsInArray - 1;
 								TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
 
 								IsSuccessful = true;
@@ -1076,8 +1073,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
 								}								
 
-								CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
-								TotalNumberOfReservedNetAddarSpotsInArray = CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray;
+								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+								RemainingNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray;
 								free(ArrayOfNetAddr);
 								ArrayOfNetAddr = TEMPArrayOfNetAddr;
 
@@ -1104,7 +1101,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				if (TotalNumberOfUnderflowedNetAddarSpotsInArray > 0)
+				if (RemainingNumberOfUnderflowedNetAddarSpotsInArray > 0)
 				{
 					ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[0], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 					if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[0]] != nullptr)
@@ -1117,13 +1114,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						else
 						{
 							uint64_t i = 0;
-							for (i = 0; i < TotalNumberOfUnderflowedNetAddarSpotsInArray; ++i)
+							for (i = 0; i < RemainingNumberOfUnderflowedNetAddarSpotsInArray; ++i)
 							{
 								UnderflowedNetAddarSpotsInArray[i] = UnderflowedNetAddarSpotsInArray[i + 1];// WARNING Can cause Buffer Overflow If i + 1  is greater than uint64_t
 							}
 							UnderflowedNetAddarSpotsInArray[i] = 0;
 
-							TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray - 1;
+							RemainingNumberOfUnderflowedNetAddarSpotsInArray = RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1;
 							TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
 
 							IsSuccessful = true;
@@ -1133,22 +1130,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				else
 				{
 					//Spot Array Number 0 Is Reserved
-					if (TotalNumberOfReservedNetAddarSpotsInArray > 0)
+					if (RemainingNumberOfReservedNetAddarSpotsInArray > 0)
 					{
-						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
-						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
-						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
+						//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
+						ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+						if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
 						{
-							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
+							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
 							{
 								IsSuccessful = false;
-								delete ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]];
-								ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)]] = nullptr;
+								delete ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]];
+								ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = nullptr;
 							}
 							else
 							{
-								ReservedNetAddarSpotsInArray[(TotalNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
-								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray - 1;
+								ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)] = 0;//Reseted
+								RemainingNumberOfReservedNetAddarSpotsInArray = RemainingNumberOfReservedNetAddarSpotsInArray - 1;
 								TotalNumberOfNetAddr = TotalNumberOfNetAddr + 1;
 
 								IsSuccessful = true;
@@ -1191,8 +1188,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
 								}
 
-								CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 								TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+								RemainingNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 								free(ArrayOfNetAddr);
 								ArrayOfNetAddr = TEMPArrayOfNetAddr;
 
@@ -1228,7 +1225,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					if (ArrayNumber > (TotalNumberOfNetAddr + TotalNumberOfUnderflowedNetAddarSpotsInArray))
+					if (ArrayNumber > (TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray))
 					{
 						Essenbp::WriteLogToFile("\n Error Trying to Remove non-existant(ArrayNumber > TotalNumberOfNetAddr) element In RemoveNetAddr In: NetAddrArray!\n");
 					}
@@ -1243,15 +1240,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						{
 							delete ArrayOfNetAddr[ArrayNumber];
 
-							if (ArrayNumber > (TotalNumberOfNetAddr + TotalNumberOfUnderflowedNetAddarSpotsInArray))
+							if (ArrayNumber > (TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray + RemainingNumberOfReservedNetAddarSpotsInArray - TotalNumberOfReservedNetAddarSpotsInArray))
 							{
 								//Reorders the the Reserved Array
 								uint64_t i = 0;
-								for (i = i; i < TotalNumberOfReservedNetAddarSpotsInArray; ++i)
+								for (i = i; i < RemainingNumberOfReservedNetAddarSpotsInArray; ++i)
 								{
 									if (ArrayNumber > ReservedNetAddarSpotsInArray[i])
 									{
-										for (uint64_t j = TotalNumberOfReservedNetAddarSpotsInArray; j > i; --j)
+										for (uint64_t j = RemainingNumberOfReservedNetAddarSpotsInArray; j > i; --j)
 										{
 											ReservedNetAddarSpotsInArray[j] = ReservedNetAddarSpotsInArray[j - 1];
 										}
@@ -1259,39 +1256,60 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									}
 								}
 								ReservedNetAddarSpotsInArray[i] = ArrayNumber;
-								TotalNumberOfReservedNetAddarSpotsInArray = TotalNumberOfReservedNetAddarSpotsInArray + 1;
+								RemainingNumberOfReservedNetAddarSpotsInArray = RemainingNumberOfReservedNetAddarSpotsInArray + 1;
 
-								//PENDING CHECK IF IT EXCEEDS
+								IsSuccessful = true;
+								//NOTE: This Can not Excede since number greater than the largest reserved number does not exist...
 							}
 							else
 							{
-								//Reorders the the Underflowed Array
-								uint64_t i = 0;
-								for (i = i; i < TotalNumberOfUnderflowedNetAddarSpotsInArray; ++i)
+								//NOTE: Since the ArrayNumber Starts always from [1]([0] Is Specially Reserved), The Last ArrayNumber of the Currently Used Slots can be attained by this (TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray + RemainingNumberOfReservedNetAddarSpotsInArray - TotalNumberOfReservedNetAddarSpotsInArray)
+								//NOTE: If the ArrayNumber is Equal to the Last Usable slot, then the slot can be added to reserved slot number [0] and shifting [i] = [i-1] till i > 0  wihout chaning the size of the reserved array
+								if (ArrayNumber == (TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray + RemainingNumberOfReservedNetAddarSpotsInArray - TotalNumberOfReservedNetAddarSpotsInArray))
 								{
-									if (ArrayNumber > UnderflowedNetAddarSpotsInArray[i])
+									for (uint64_t i = RemainingNumberOfReservedNetAddarSpotsInArray - 1; i > 0; --i)
 									{
-										for (uint64_t j = TotalNumberOfUnderflowedNetAddarSpotsInArray; j > i; --j)
-										{
-											UnderflowedNetAddarSpotsInArray[j] = UnderflowedNetAddarSpotsInArray[j - 1];
-										}
-										break;
+										ReservedNetAddarSpotsInArray[i] = ReservedNetAddarSpotsInArray[i - 1];
 									}
-								}
-								UnderflowedNetAddarSpotsInArray[i] = ArrayNumber;
-								TotalNumberOfUnderflowedNetAddarSpotsInArray = TotalNumberOfUnderflowedNetAddarSpotsInArray + 1;
+									ReservedNetAddarSpotsInArray[0] = ArrayNumber;//ArrayNumber == (ReservedNetAddarSpotsInArray[0] - 1)(Assuming RemainingNumberOfReservedNetAddarSpotsInArray == TotalNumberOfReservedNetAddarSpotsInArray)
 
-								//PENDING CHECK IF IT EXCEEDS
+									IsSuccessful = true;
+									//NOTE: no need to check for Excede Since nothing is Increased or Decreased, only Shifted
+								}
+								else
+								{
+									//Reorders the the Underflowed Array
+									uint64_t i = 0;
+									for (i = i; i < RemainingNumberOfUnderflowedNetAddarSpotsInArray; ++i)
+									{
+										if (ArrayNumber > UnderflowedNetAddarSpotsInArray[i])
+										{
+											for (uint64_t j = RemainingNumberOfUnderflowedNetAddarSpotsInArray; j > i; --j)
+											{
+												UnderflowedNetAddarSpotsInArray[j] = UnderflowedNetAddarSpotsInArray[j - 1];
+											}
+											break;
+										}
+									}
+									UnderflowedNetAddarSpotsInArray[i] = ArrayNumber;
+									RemainingNumberOfUnderflowedNetAddarSpotsInArray = RemainingNumberOfUnderflowedNetAddarSpotsInArray + 1;
+								}	
+
+								//This Entirely Reorders the Active Array(Rearranges the Latest Added NetAddr to the Smallest ArrayNumber)
+								if (RemainingNumberOfUnderflowedNetAddarSpotsInArray >= MaximumFreeSpotsInArray)
+								{
+									//PENDING 
+								}
 							}
 							TotalNumberOfNetAddr = TotalNumberOfNetAddr - 1;
 
-							if (MaximumFreeSpotsInArray > TotalNumberOfUnderflowedNetAddarSpotsInArray)
+							if (MaximumFreeSpotsInArray > RemainingNumberOfUnderflowedNetAddarSpotsInArray)
 							{								
 								IsSuccessful = true;// No Need to reorder
 							}
 							else
 							{
-								//PENDING Also use this CurrentMaxTotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+								//PENDING Also use this TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 								//PENDING Reorders this Enitre struct
 								ReservedNetAddarSpotsInArray = (uint64_t*)calloc(MinimumFreeSpotsInArray, sizeof(uint64_t));
 								if (ReservedNetAddarSpotsInArray == nullptr)
@@ -1326,7 +1344,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 											ReservedNetAddarSpotsInArray[i] = (TotalNumberOfNetAddr + MinimumFreeSpotsInArray) - i;
 										}
 
-										TotalNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
+										RemainingNumberOfReservedNetAddarSpotsInArray = MinimumFreeSpotsInArray;
 										free(ArrayOfNetAddr);
 										ArrayOfNetAddr = TEMPArrayOfNetAddr;
 									}
@@ -1670,7 +1688,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					UnderflowedNetAddarSpotsInArray = nullptr;
 				}
 
-				TotalNumberOfReservedNetAddarSpotsInArray = 0;
+				RemainingNumberOfReservedNetAddarSpotsInArray = 0;
 				TotalNumberOfNetAddr = 0;
 
 				IsConstructionSuccessful = false;
