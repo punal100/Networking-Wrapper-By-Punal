@@ -530,7 +530,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	struct NetAddrIPv4
 	{
 	public:
-		uint64_t ClientUniqueID = 0;//This should be changed Every Specified Minutes For Security Purposes...
+		uint64_t ClientUniqueID = 0;//PENDING This should be changed Every Specified Minutes For Security Purposes...
 
 		const SOCKET Socket;
 		const uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
@@ -604,7 +604,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv4!");
+				Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddrIPv4!");
 			}
 		}
 
@@ -640,8 +640,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv4!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() Failed In: NetAddrIPv4!");
 			}
+		}
+
+		uint64_t GetClientUniqueID()
+		{
+			return ClientUniqueID;
+		}
+
+		uint64_t GetUniqueNumber()
+		{
+			return UniqueNumber;
 		}
 
 		~NetAddrIPv4()
@@ -736,7 +746,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv6!");
+				Essenbp::WriteLogToFile("\n Error AddSentPackage() Failed In: NetAddrIPv6!");
 			}
 		}
 
@@ -772,8 +782,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error AddSentPackage() In: NetAddrIPv6!");
+				Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddrIPv6!");
 			}
+		}
+
+		uint64_t GetClientUniqueID()
+		{
+			return ClientUniqueID;
+		}
+
+		uint64_t GetUniqueNumber()
+		{
+			return UniqueNumber;
 		}
 
 		~NetAddrIPv6()
@@ -852,6 +872,82 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		void AddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					IPv4Addr->AddSentPackage(Data, DataSize, IsSuccessful);
+				}
+				else
+				{
+					IPv6Addr->AddSentPackage(Data, DataSize, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error AddSentPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		void AddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					IPv4Addr->AddReceivedPackage(Data, DataSize, IsSuccessful);
+				}
+				else
+				{
+					IPv6Addr->AddReceivedPackage(Data, DataSize, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		uint64_t GetClientUniqueID()
+		{
+			if (TrueForIPv6FalseForIPv4)
+			{
+				return IPv4Addr->GetClientUniqueID();
+			}
+			else
+			{
+				return IPv6Addr->GetClientUniqueID();
+			}
+		}
+
+		uint64_t GetUniqueNumber()
+		{
+			if (TrueForIPv6FalseForIPv4)
+			{
+				return IPv4Addr->GetUniqueNumber();
+			}
+			else
+			{
+				return IPv6Addr->GetUniqueNumber();
+			}
+		}
+
 		~NetAddr()
 		{
 			Essenbp::WriteLogToFile("\n Destructing NetAddr!");
@@ -888,8 +984,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		NetAddr** ArrayOfNetAddr = nullptr;
 		uint64_t TotalNumberOfNetAddr = 0;
 
-		//PENDING make Variable for Removed Numbers which is beyond reserved number like 2048 + n(== > 0)
-		//PENDING check MinumimFreeSpots And Maximum Free Spots
 		const uint64_t MaxReservedFreeSpotsInArray = 0;//If Every Reserved Spot the Used then new Reserved Spots with size MaxReservedFreeSpotsInArray is added the Array Is Reordered Only when Increasing
 		const uint64_t MaxUnderflowedFreeSpotsInArray = 0;//Reordered Only when Decreasing
 		const uint16_t SentPacketsArchiveSize;
@@ -902,11 +996,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		uint64_t TotalNumberOfReorderedArray = 0;//NOTE: n = MaxReservedFreeSpotsInArray + MaxUnderflowedFreeSpotsInArray
 		uint64_t* ReorderedArrayNumbers = nullptr;//NOTE: Total Size = n*2*(sizeof(uint64_t)) //[(k*2)] is Previous Array Number, [(k*2) + 1] is the Current(Reordered) Array Number
-		//PENDING ReorderedArrayNumbers USE IT NOW
 		bool IsConstructionSuccessful = false;
 
-		//PENDING make Retreiving 0th Element Impossible
-		//PENDING 0th Element set it to server or something
 
 	public:
 		NetAddrArray(uint64_t ArgMaxReservedFreeSpotsInArray, uint64_t ArgMaxUnderflowedFreeSpotsInArray, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, NetAddr* BaseNetAddr = nullptr) : MaxReservedFreeSpotsInArray(ArgMaxReservedFreeSpotsInArray), MaxUnderflowedFreeSpotsInArray(ArgMaxUnderflowedFreeSpotsInArray), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
@@ -921,7 +1012,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			UnderflowedNetAddarSpotsInArray = nullptr;
 			RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;
 			TotalNumberOfReorderedArray = 0;
-			ReorderedArrayNumbers = nullptr;//PENDING Maxe Fixed size(n*2 should be max size)
+			ReorderedArrayNumbers = nullptr;
 
 			if (MaxReservedFreeSpotsInArray == 0)
 			{
@@ -1000,7 +1091,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		//PENDING COPY THIS TO IPV6
 		void AddNetAddr(SOCKET Socket, sockaddr_in Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -1223,7 +1313,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		//PENDING COMPLETE THIS
 		//NOTE: 0th Element Can't be removed it is reserved
 		//NOTE: Only 1 to TotalNumberOfNetAddr(== (n * MaxUnderflowedFreeSpotsInArray) + 1) can be removed
 		void RemoveNetAddr(uint64_t ArrayNumber, bool &IsArrayReordered, bool& IsSuccessful)
@@ -1265,7 +1354,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									delete ArrayOfNetAddr[ArrayNumber];
 									ArrayOfNetAddr[ArrayNumber] = nullptr;
 									//Reorders the the Reserved Array
-									uint64_t i = 0;//PENDING
+									uint64_t i = 0;
 									for (i = i; i < RemainingNumberOfReservedNetAddarSpotsInArray; ++i)
 									{
 										if (ArrayNumber > ReservedNetAddarSpotsInArray[i])
@@ -1307,7 +1396,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 										//NOTE: (Rearranges the Latest Added NetAddr to the Smallest Unused ArrayNumber)
 										if ((RemainingNumberOfUnderflowedNetAddarSpotsInArray + 1) >= MaxUnderflowedFreeSpotsInArray)
 										{
-											//PENDING DO Code then check and delete	
 											NetAddr** TEMPArrayOfNetAddr = nullptr;
 											Essenbp::Malloc_PointerToArrayOfPointers((void***)&TEMPArrayOfNetAddr, (TotalNumberOfNetAddr + MaxReservedFreeSpotsInArray), sizeof(NetAddr*), IsSuccessful);
 											if (!IsSuccessful)
@@ -1629,8 +1717,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		uint16_t SentPacketsArchiveSize = 256;//					//NOTE: Previous Sent Packets Is Stored(For Each Client)
 		uint16_t ReceivedPacketsArchiveSize = 256;//				//NOTE: Previous Sent Packets Is Stored(For Each Client)
 
-		std::atomic_bool IsProcessingData = false;
-		std::atomic_bool IsChangingClientOrder = false;
+		std::atomic_bool IsAddingData = false;//PENDING no processing of data when adding
+		std::atomic_bool IsProcessingData = false;//PENDING
+		std::atomic_bool IsChangingClientOrder = false;//PENDING
 
 		const bool IsServer;
 		bool IsClientTrueForTCPFalseForUDP;// Do not Change it Manually
@@ -1645,13 +1734,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		sockaddr_in6 ServerHintIPv6 = { 0 };//This Server or Connecting Server hint
 
 		//NOTE: This is Only For Server
-		ClientOrderList* ClientsList = nullptr;//					//NOTE: This is used by Server for List of Clients Connected
+		NetAddrArray* ArrayOfClients = nullptr;//						//NOTE: This is used by Server for List of Clients Connected
 
 		//NOTE: This Is Only  For Client
-		ArrayOfNetworkDataAndSize* ClientSentPackets = nullptr;
-		ArrayOfNetworkDataAndSize* ClientReceivedPackets = nullptr;
-		uint16_t ClientSentCount = 0;//								//NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
-		uint16_t ClientReceivedCount = 0;//							//NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
+		NetAddr* ThisClient = nullptr;
 
 		//PENDING add Atomic Bool for this
 		void ClientAddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
@@ -1671,35 +1757,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
-					ClientSentPackets->GetData(ClientSentCount, &PtrToDataAndDataSize, IsSuccessful);
+					ThisClient->AddSentPackage(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in ClientAddSentPackage In: NetworkWrapper!");
-					}
-					else
-					{
-						PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
-						if (!IsSuccessful)
-						{
-							Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in ClientAddSentPackage In: NetworkWrapper!");
-						}
-						else
-						{
-							ClientSentCount = ClientSentCount + 1;
-						}
+						Essenbp::WriteLogToFile("\n Error NetAddr::AddSentPackage Failed in ClientAddSentPackage In: NetworkWrapper!");
 					}
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ClientAddSentPackage() In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error ClientAddSentPackage() Failed In: NetworkWrapper!");
 			}
 		}
 
 		//PENDING add Atomic Bool for this
-		//NOTE:Command 2Bytes + Data Varied Bytes
+		//NOTE:2 Byte SizeOfData, 2 Byte Command, //NOTE:8 Byte Client Number And Client Unique Number is not Added here since it is constant...
 		void ClientAddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -1717,36 +1790,23 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
-					ClientReceivedPackets->GetData(ClientSentCount, &PtrToDataAndDataSize, IsSuccessful);
+					ThisClient->AddReceivedPackage(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in ClientAddReceivedPackage In: NetworkWrapper!");
-					}
-					else
-					{
-						PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
-						if (!IsSuccessful)
-						{
-							Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in ClientAddReceivedPackage In: NetworkWrapper!");
-						}
-						else
-						{
-							ClientReceivedCount = ClientReceivedCount + 1;
-						}
+						Essenbp::WriteLogToFile("\n Error NetAddr::AddReceivedPackage Failed in ClientAddReceivedPackage In: NetworkWrapper!");
 					}
 				}
 			}
 
 			if (!IsSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ClientAddSentPackage() In: NetworkWrapper!");
+				Essenbp::WriteLogToFile("\n Error ClientAddReceivedPackage() Failed In: NetworkWrapper!");
 			}
 		}
 
 		//NOTE: This checks if the sender is in List, and has given correct ClientUniqueID[8 to 15] ("Password" Randomly Generated upon successful connection to The server)
 		//NOTE: Received_SizeOfData is the Size of the Data(Designated by the Server/Client) Carried by the Received packet
-		void CheckReceivedDataInfoServer(char* ReceivedData, bool TrueForIPv6FalseForIPv4, uint16_t& Received_SizeOfData, bool& IsSuccessful)
+		void CheckReceivedDataInfoServer(char* ReceivedData, uint16_t& Received_SizeOfData, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -1757,63 +1817,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
+				NetAddr* ClientCheckPtr = nullptr;
 				uint64_t Received_ClientNumber = ntohll(((uint64_t*)ReceivedData)[0]);			// [0] to [7] Char
 				uint64_t Received_ClientUniqueID = ntohll(((uint64_t*)ReceivedData)[1]);		// [8] to [15] Char
 				Received_SizeOfData = ntohll(((uint16_t*)ReceivedData)[8]);						//[16] to [17] Char
 				//uint16_t Received_NetworkWrapperCommand = ntohll(((uint16_t*)ReceivedData)[9]);	//[18] to [19] Char //NOT NEEDED HERE!
 
-				if (TrueForIPv6FalseForIPv4)
+				ArrayOfClients->GetNetAddr(Received_ClientNumber, &ClientCheckPtr, IsSuccessful);
+				if (IsSuccessful)
 				{
-					ClientOrderIPv6* ClientOrderIPv6ptr = nullptr;
-					ClientsList->GetClientIPv6(Received_ClientNumber, &ClientOrderIPv6ptr, IsSuccessful);
-					if (!IsSuccessful)
+					if (ClientCheckPtr->GetClientUniqueID() != Received_ClientUniqueID)
 					{
-						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in CheckReceivedDataInfoServer In: NetworkWrapper!");
-					}
-					else
-					{
-						if (Received_ClientUniqueID != ClientOrderIPv6ptr->ClientUniqueID)
-						{
-							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckReceivedDataInfoServer In: NetworkWrapper!");
-						}
-						else
-						{
-							if (Received_SizeOfData > MaxDataSizePerPacket)
-							{
-								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckReceivedDataInfoServer In: NetworkWrapper!");
-							}
-							else
-							{
-								IsSuccessful = true;
-							}
-						}
-					}
-				}
-				else
-				{
-					ClientOrderIPv4* ClientOrderIPv4ptr = nullptr;
-					ClientsList->GetClientIPv4(Received_ClientNumber, &ClientOrderIPv4ptr, IsSuccessful);
-					if (!IsSuccessful)
-					{
-						Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in CheckReceivedDataInfoServer In: NetworkWrapper!");
-					}
-					else
-					{
-						if (Received_ClientUniqueID != ClientOrderIPv4ptr->ClientUniqueID)
-						{
-							Essenbp::WriteLogToFile("\n Error Received_ClientUniqueID Does not Match With ClientUniqueID in CheckReceivedDataInfoServer In: NetworkWrapper!");
-						}
-						else
-						{
-							if (Received_SizeOfData > MaxDataSizePerPacket)
-							{
-								Essenbp::WriteLogToFile("\n Error Received_SizeOfData Exceeds SizeOfData in CheckReceivedDataInfoServer In: NetworkWrapper!");
-							}
-							else
-							{
-								IsSuccessful = true;
-							}
-						}
+						IsSuccessful = false;//PENDING CONTINUE TO NEXT STUFF
 					}
 				}
 			}
