@@ -132,18 +132,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	}
 
-	void CompareIPAddr(sockaddr_in& FirstIP, sockaddr_in& SecondIP, bool& ReturnsTrueForSameFalseForNot)
+	void CompareIPAddr(const sockaddr_in* FirstIP, const sockaddr_in* SecondIP, bool& ReturnsTrueForSameFalseForNot)
 	{
-		ReturnsTrueForSameFalseForNot = ((FirstIP.sin_addr.s_addr == SecondIP.sin_addr.s_addr) && (FirstIP.sin_port == SecondIP.sin_port));
+		ReturnsTrueForSameFalseForNot = ((FirstIP->sin_addr.s_addr == SecondIP->sin_addr.s_addr) && (FirstIP->sin_port == SecondIP->sin_port));
 	}
-	void CompareIPAddr(sockaddr_in6& FirstIP, sockaddr_in6& SecondIP, bool& ReturnsTrueForSameFalseForNot)
+	void CompareIPAddr(const sockaddr_in6* FirstIP, const sockaddr_in6* SecondIP, bool& ReturnsTrueForSameFalseForNot)
 	{
-		ReturnsTrueForSameFalseForNot = (FirstIP.sin6_port == SecondIP.sin6_port);
+		ReturnsTrueForSameFalseForNot = (FirstIP->sin6_port == SecondIP->sin6_port);
 		if (ReturnsTrueForSameFalseForNot)
 		{
 			for (int i = 0; i < 16; ++i)
 			{
-				if (FirstIP.sin6_addr.s6_addr[i] != SecondIP.sin6_addr.s6_addr[i])
+				if (FirstIP->sin6_addr.s6_addr[i] != SecondIP->sin6_addr.s6_addr[i])
 				{
 					ReturnsTrueForSameFalseForNot = false;
 					break;
@@ -835,18 +835,16 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	{
 	public:
 		const bool TrueForIPv6FalseForIPv4;
-		NetAddrIPv4* IPv4Addr = nullptr;
-		NetAddrIPv6* IPv6Addr = nullptr;
+		const NetAddrIPv4* IPv4Addr;
+		const NetAddrIPv6* IPv6Addr;
 
 		bool IsConstructionSuccessful;
 
-		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(false)
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(false), IPv4Addr(new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize)), IPv6Addr(nullptr)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
 
 			IsConstructionSuccessful = false;
-
-			IPv4Addr = new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize);
 
 			if (IPv4Addr != nullptr)
 			{
@@ -866,13 +864,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(true)
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(true), IPv4Addr(nullptr), IPv6Addr(new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
 
 			IsConstructionSuccessful = false;
-
-			IPv6Addr = new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize);
 
 			if (IPv6Addr != nullptr)
 			{
@@ -1826,7 +1822,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//NOTE: This checks if the sender is in List, and has given correct ClientUniqueID[8 to 15] ("Password" Randomly Generated upon successful connection to The server)
 		//NOTE: Received_SizeOfData is the Size of the Data(Designated by the Server/Client) Carried by the Received packet
-		void CheckReceivedDataInfoServer(char* ReceivedData, uint16_t& Received_SizeOfData, bool& IsSuccessful)
+		void CheckReceivedDataInfoServer(char* ReceivedData, uint16_t& Received_SizeOfData, sockaddr_in* ReceivedAddress, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -1846,9 +1842,63 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				ArrayOfClients->GetNetAddr(Received_ClientNumber, &ClientCheckPtr, IsSuccessful);
 				if (IsSuccessful)
 				{
-					if (ClientCheckPtr->GetClientUniqueID() != Received_ClientUniqueID)
+					if (ClientCheckPtr->GetClientUniqueID() == Received_ClientUniqueID)
 					{
-						IsSuccessful = false;//PENDING CONTINUE TO NEXT STUFF //Compare IP HERE
+						if (!(ClientCheckPtr->TrueForIPv6FalseForIPv4))
+						{
+							CompareIPAddr(&ClientCheckPtr->IPv4Addr->NetAddress, ReceivedAddress, IsSuccessful);
+						}
+						else
+						{
+							IsSuccessful = false;							
+						}						
+					}
+					else
+					{
+						IsSuccessful = false;
+					}
+				}
+			}
+
+			//if (!IsSuccessful)//NO Need here because This is Received Data From The Internet...  //CHECK PENDING
+			//{
+			//	Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed In: NetworkWrapper!");
+			//}
+		}
+		void CheckReceivedDataInfoServer(char* ReceivedData, uint16_t& Received_SizeOfData, sockaddr_in6* ReceivedAddress, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling CheckReceivedDataInfoServer Without Constructing the struct In: NetworkWrapper!\n");
+				Essenbp::WriteLogToFile("\n Error CheckReceivedDataInfoServer Failed In: NetworkWrapper!");
+			}
+			else
+			{
+				NetAddr* ClientCheckPtr = nullptr;
+				uint64_t Received_ClientNumber = ntohll(((uint64_t*)ReceivedData)[0]);			// [0] to [7] Char
+				uint64_t Received_ClientUniqueID = ntohll(((uint64_t*)ReceivedData)[1]);		// [8] to [15] Char
+				Received_SizeOfData = ntohll(((uint16_t*)ReceivedData)[8]);						//[16] to [17] Char
+				//uint16_t Received_NetworkWrapperCommand = ntohll(((uint16_t*)ReceivedData)[9]);	//[18] to [19] Char //NOT NEEDED HERE!
+
+				ArrayOfClients->GetNetAddr(Received_ClientNumber, &ClientCheckPtr, IsSuccessful);
+				if (IsSuccessful)
+				{
+					if (ClientCheckPtr->GetClientUniqueID() == Received_ClientUniqueID)
+					{
+						if (ClientCheckPtr->TrueForIPv6FalseForIPv4)
+						{
+							CompareIPAddr(&ClientCheckPtr->IPv6Addr->NetAddress, ReceivedAddress, IsSuccessful);
+						}
+						else
+						{
+							IsSuccessful = false;
+						}
+					}
+					else
+					{
+						IsSuccessful = false;
 					}
 				}
 			}
@@ -2020,6 +2070,46 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			{
 				memset(ReceivedData, 0, DataBufferSize); // Clear the receive Buffer(ReceivedDatafer)			
 				SizeOfReturnedData = recv(ReciveSocket, ReceivedData, sizeof(ReceivedData), 0);
+
+				if ((SizeOfReturnedData == 0) || (WSAGetLastError() > 0))// When the size is 0
+				{
+					Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveData In: NetworkWrapper!");
+					Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveData In: NetworkWrapper!");
+				}
+			}
+		}
+
+		void ReceiveData(SOCKET ReciveSocket, char* ReceivedData, uint16_t DataBufferSize, uint16_t& SizeOfReturnedData, bool& IsSuccessful, sockaddr_in* IPv4Address)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling ReceiveData Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				int SockAddrSize = sizeof(sockaddr*);
+				memset(ReceivedData, 0, DataBufferSize); // Clear the receive Buffer(ReceivedDatafer)			
+				SizeOfReturnedData = recvfrom(ReciveSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)IPv4Address, &SockAddrSize);
+
+				if ((SizeOfReturnedData == 0) || (WSAGetLastError() > 0))// When the size is 0
+				{
+					Essenbp::WriteLogToFile("Error No Data Received From ReceiveData() in ReceiveData In: NetworkWrapper!");
+					Essenbp::WriteLogToFile("\n Error ReceiveData() Failed with Error " + std::to_string(WSAGetLastError()) + " in ReceiveData In: NetworkWrapper!");
+				}
+			}
+		}
+
+		void ReceiveData(SOCKET ReciveSocket, char* ReceivedData, uint16_t DataBufferSize, uint16_t& SizeOfReturnedData, bool& IsSuccessful, sockaddr_in6* IPv6Address)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling ReceiveData Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				int SockAddrSize = sizeof(sockaddr*);
+				memset(ReceivedData, 0, DataBufferSize); // Clear the receive Buffer(ReceivedDatafer)			
+				SizeOfReturnedData = recvfrom(ReciveSocket, ReceivedData, sizeof(ReceivedData), 0, (sockaddr*)IPv6Address, &SockAddrSize);
 
 				if ((SizeOfReturnedData == 0) || (WSAGetLastError() > 0))// When the size is 0
 				{
