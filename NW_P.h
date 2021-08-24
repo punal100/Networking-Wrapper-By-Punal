@@ -132,6 +132,26 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	}
 
+	void CompareIPAddr(sockaddr_in& FirstIP, sockaddr_in& SecondIP, bool& ReturnsTrueForSameFalseForNot)
+	{
+		ReturnsTrueForSameFalseForNot = ((FirstIP.sin_addr.s_addr == SecondIP.sin_addr.s_addr) && (FirstIP.sin_port == SecondIP.sin_port));
+	}
+	void CompareIPAddr(sockaddr_in6& FirstIP, sockaddr_in6& SecondIP, bool& ReturnsTrueForSameFalseForNot)
+	{
+		ReturnsTrueForSameFalseForNot = (FirstIP.sin6_port == SecondIP.sin6_port);
+		if (ReturnsTrueForSameFalseForNot)
+		{
+			for (int i = 0; i < 16; ++i)
+			{
+				if (FirstIP.sin6_addr.s6_addr[i] != SecondIP.sin6_addr.s6_addr[i])
+				{
+					ReturnsTrueForSameFalseForNot = false;
+					break;
+				}
+			}
+		}
+	}
+
 	//NOTE: Similar to UnknownDataAndSizeStruct But the Data is Stored in Big Endian Format
 	//NOTE: Pass Each Variable One by One like this CopyAndStoreData(Data, SizeOfData, Issuccessful, false, AppendData = true)
 	//NOTE: If Each Variable Is Not Passed One by One, Then Expect Undefined Behaviours...
@@ -1828,7 +1848,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (ClientCheckPtr->GetClientUniqueID() != Received_ClientUniqueID)
 					{
-						IsSuccessful = false;//PENDING CONTINUE TO NEXT STUFF
+						IsSuccessful = false;//PENDING CONTINUE TO NEXT STUFF //Compare IP HERE
 					}
 				}
 			}
