@@ -831,31 +831,59 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	};
 
 	//NOTE: For Both IPv4 And IPv6
-	struct NetAddr
+	//NOTE: This Version will have its CustomStructOrClassptr Data Safely Deleted but two new variables are added to achive that(Basically Size is increased)
+	struct Sole_NetAddr
 	{
 	public:
 		const bool TrueForIPv6FalseForIPv4;
-		const NetAddrIPv4* IPv4Addr;
-		const NetAddrIPv6* IPv6Addr;
+		const void* IPAddr;
+		void* CustomStructOrClassptr = nullptr;
+		//void (*CustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful) = nullptr;//Not Needed 
+		void (*CustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr) = nullptr;
 
 		bool IsConstructionSuccessful;
 
-		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(false), IPv4Addr(new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize)), IPv6Addr(nullptr)
+		Sole_NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful), void (*ArgCustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr)) : TrueForIPv6FalseForIPv4(false), IPAddr(new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
 
 			IsConstructionSuccessful = false;
 
-			if (IPv4Addr != nullptr)
+			CustomStructOrClassptr = nullptr;
+
+			if (IPAddr != nullptr)
 			{
-				if (IPv4Addr->IsConstructionSuccessful)
+				if (((NetAddrIPv4*)IPAddr)->IsConstructionSuccessful)
 				{
-					IsConstructionSuccessful = true;
+					if (ArgCustomStructOrClass_Constructorfunctionptr == nullptr)
+					{
+						Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Constructorfunctionptr Is Nullptr In: NetAddr!\n");
+					}
+					else
+					{
+						if (ArgCustomStructOrClass_Destructorfunctionptr == nullptr)
+						{
+							Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Destructorfunctionptr Is Nullptr In: NetAddr!\n");
+						}
+						else
+						{
+							ArgCustomStructOrClass_Constructorfunctionptr(&CustomStructOrClassptr, IsConstructionSuccessful);
+							if (IsConstructionSuccessful)
+							{
+								CustomStructOrClass_Destructorfunctionptr = ArgCustomStructOrClass_Destructorfunctionptr;
+							}
+						}
+					}
 				}
 				else
 				{
-					delete IPv4Addr;
+					Essenbp::WriteLogToFile("\n Error IPAddr Constrction Failed In: NetAddr!\n");
+					delete IPAddr;
 				}
+			}
+			else
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(NetAddrIPv4)) + " Byes Of Memory for IPAddr In: NetAddr!\n");
 			}
 
 			if (!IsConstructionSuccessful)
@@ -864,22 +892,47 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
-		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize) : TrueForIPv6FalseForIPv4(true), IPv4Addr(nullptr), IPv6Addr(new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
+		Sole_NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful), void (*ArgCustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr)) : TrueForIPv6FalseForIPv4(true), IPAddr(new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
 
 			IsConstructionSuccessful = false;
 
-			if (IPv6Addr != nullptr)
+			CustomStructOrClassptr = nullptr;
+
+			if (IPAddr != nullptr)
 			{
-				if (IPv6Addr->IsConstructionSuccessful)
+				if (((NetAddrIPv6*)IPAddr)->IsConstructionSuccessful)
 				{
-					IsConstructionSuccessful = true;
+					if (ArgCustomStructOrClass_Constructorfunctionptr == nullptr)
+					{
+						Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Constructorfunctionptr Is Nullptr In: NetAddr!\n");
+					}
+					else
+					{
+						if (ArgCustomStructOrClass_Destructorfunctionptr == nullptr)
+						{
+							Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Destructorfunctionptr Is Nullptr In: NetAddr!\n");
+						}
+						else
+						{
+							ArgCustomStructOrClass_Constructorfunctionptr(&CustomStructOrClassptr, IsConstructionSuccessful);
+							if (IsConstructionSuccessful)
+							{
+								CustomStructOrClass_Destructorfunctionptr = ArgCustomStructOrClass_Destructorfunctionptr;
+							}
+						}
+					}
 				}
 				else
 				{
-					delete IPv6Addr;
+					Essenbp::WriteLogToFile("\n Error IPAddr Constrction Failed In: NetAddr!\n");
+					delete IPAddr;
 				}
+			}
+			else
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(NetAddrIPv4)) + " Byes Of Memory for IPAddr In: NetAddr!\n");
 			}
 
 			if (!IsConstructionSuccessful)
@@ -900,11 +953,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			{
 				if (TrueForIPv6FalseForIPv4)
 				{
-					IPv4Addr->AddSentPackage(Data, DataSize, IsSuccessful);
+					((NetAddrIPv6*)IPAddr)->AddSentPackage(Data, DataSize, IsSuccessful);
 				}
 				else
 				{
-					IPv6Addr->AddSentPackage(Data, DataSize, IsSuccessful);
+					((NetAddrIPv4*)IPAddr)->AddSentPackage(Data, DataSize, IsSuccessful);
 				}
 
 				if (!IsSuccessful)
@@ -926,11 +979,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			{
 				if (TrueForIPv6FalseForIPv4)
 				{
-					IPv4Addr->AddReceivedPackage(Data, DataSize, IsSuccessful);
+					((NetAddrIPv6*)IPAddr)->AddReceivedPackage(Data, DataSize, IsSuccessful);
 				}
 				else
 				{
-					IPv6Addr->AddReceivedPackage(Data, DataSize, IsSuccessful);
+					((NetAddrIPv4*)IPAddr)->AddReceivedPackage(Data, DataSize, IsSuccessful);
 				}
 
 				if (!IsSuccessful)
@@ -944,11 +997,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		{
 			if (TrueForIPv6FalseForIPv4)
 			{
-				return IPv4Addr->GetClientUniqueID();
+				return ((NetAddrIPv6*)IPAddr)->GetClientUniqueID();
 			}
 			else
 			{
-				return IPv6Addr->GetClientUniqueID();
+				return ((NetAddrIPv4*)IPAddr)->GetClientUniqueID();
 			}
 		}
 
@@ -956,11 +1009,220 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		{
 			if (TrueForIPv6FalseForIPv4)
 			{
-				return IPv4Addr->GetUniqueNumber();
+				return ((NetAddrIPv6*)IPAddr)->GetUniqueNumber();
 			}
 			else
 			{
-				return IPv6Addr->GetUniqueNumber();
+				return ((NetAddrIPv4*)IPAddr)->GetUniqueNumber();
+			}
+		}
+
+		~Sole_NetAddr()
+		{
+			Essenbp::WriteLogToFile("\n Destructing NetAddr!");
+			if (IsConstructionSuccessful)
+			{				
+				if (IPAddr != nullptr)
+				{
+					delete IPAddr;
+					IPAddr = nullptr;
+				}
+				if (CustomStructOrClassptr != nullptr)
+				{
+					CustomStructOrClass_Destructorfunctionptr(&CustomStructOrClassptr);
+					if (IsConstructionSuccessful)
+					{
+						CustomStructOrClassptr = nullptr;
+					}
+					IsConstructionSuccessful = !IsConstructionSuccessful;
+				}
+				IsConstructionSuccessful = false;
+			}
+		}
+	};
+
+	//NOTE: For Both IPv4 And IPv6
+	//NOTE: This is meant for NetAddrArray Which Takes care of its construction and destruction
+	//NOTE: For this Version The CustomStructOrClassptr Data is to be Destroyed Externally, The Plus point of this is that this has less size...
+	//NOTE: In Other Words ALWAYS REMEMBER TO SAFELY DELETE THIS(But anyway NO Manual destruction is required since This NetAddrArray will take care of it)
+	struct NetAddr
+	{
+	public:
+		const bool TrueForIPv6FalseForIPv4;
+		const void* IPAddr;
+		void* CustomStructOrClassptr = nullptr;
+
+		bool IsConstructionSuccessful;
+
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful)) : TrueForIPv6FalseForIPv4(false), IPAddr(new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
+		{
+			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
+
+			IsConstructionSuccessful = false;
+
+			CustomStructOrClassptr = nullptr;
+
+			if (IPAddr != nullptr)
+			{
+				if (((NetAddrIPv4*)IPAddr)->IsConstructionSuccessful)
+				{
+					if (ArgCustomStructOrClass_Constructorfunctionptr == nullptr)
+					{
+						Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Constructorfunctionptr Is Nullptr In: NetAddr!\n");
+					}
+					else
+					{
+						ArgCustomStructOrClass_Constructorfunctionptr(&CustomStructOrClassptr, IsConstructionSuccessful);
+						if (!IsConstructionSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error CustomStructOrClassptr Constrction Failed In: NetAddr!\n");
+						}
+					}
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error IPAddr Constrction Failed In: NetAddr!\n");
+					delete IPAddr;
+				}
+			}
+			else
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(NetAddrIPv4)) + " Byes Of Memory for IPAddr In: NetAddr!\n");
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddr!");
+			}
+		}
+
+		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful)) : TrueForIPv6FalseForIPv4(true), IPAddr(new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
+		{
+			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
+
+			IsConstructionSuccessful = false;
+
+			CustomStructOrClassptr = nullptr;
+
+			if (IPAddr != nullptr)
+			{
+				if (((NetAddrIPv4*)IPAddr)->IsConstructionSuccessful)
+				{
+					if (ArgCustomStructOrClass_Constructorfunctionptr == nullptr)
+					{
+						Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Constructorfunctionptr Is Nullptr In: NetAddr!\n");
+					}
+					else
+					{
+						ArgCustomStructOrClass_Constructorfunctionptr(&CustomStructOrClassptr, IsConstructionSuccessful);
+						if (!IsConstructionSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error CustomStructOrClassptr Constrction Failed In: NetAddr!\n");
+						}
+					}
+				}
+				else
+				{
+					Essenbp::WriteLogToFile("\n Error IPAddr Constrction Failed In: NetAddr!\n");
+					delete IPAddr;
+				}
+			}
+			else
+			{
+				Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(sizeof(NetAddrIPv4)) + " Byes Of Memory for IPAddr In: NetAddr!\n");
+			}
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Construction Failed NetAddr!");
+			}
+		}
+
+		void AddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddSentPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					((NetAddrIPv6*)IPAddr)->AddSentPackage(Data, DataSize, IsSuccessful);
+				}
+				else
+				{
+					((NetAddrIPv4*)IPAddr)->AddSentPackage(Data, DataSize, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error AddSentPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		void AddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling AddReceivedPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					((NetAddrIPv6*)IPAddr)->AddReceivedPackage(Data, DataSize, IsSuccessful);
+				}
+				else
+				{
+					((NetAddrIPv4*)IPAddr)->AddReceivedPackage(Data, DataSize, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		uint64_t GetClientUniqueID()
+		{
+			if (TrueForIPv6FalseForIPv4)
+			{
+				return ((NetAddrIPv6*)IPAddr)->GetClientUniqueID();
+			}
+			else
+			{
+				return ((NetAddrIPv4*)IPAddr)->GetClientUniqueID();
+			}
+		}
+
+		uint64_t GetUniqueNumber()
+		{
+			if (TrueForIPv6FalseForIPv4)
+			{
+				return ((NetAddrIPv6*)IPAddr)->GetUniqueNumber();
+			}
+			else
+			{
+				return ((NetAddrIPv4*)IPAddr)->GetUniqueNumber();
+			}
+		}
+
+		void FreeOrDeleteCustomStructOrClassptr(void (*CustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr))
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling FreeOrDeleteCustomStructOrClassptr Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				CustomStructOrClass_Destructorfunctionptr(&CustomStructOrClassptr);
 			}
 		}
 
@@ -968,19 +1230,16 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		{
 			Essenbp::WriteLogToFile("\n Destructing NetAddr!");
 			if (IsConstructionSuccessful)
-			{				
-				if (IPv4Addr != nullptr)
+			{
+				if (IPAddr != nullptr)
 				{
-					delete IPv4Addr;
-				
+					delete IPAddr;
+					IPAddr = nullptr;
 				}
-				if (IPv6Addr != nullptr)
+				if (CustomStructOrClassptr != nullptr)
 				{
-					delete IPv6Addr;
+					Essenbp::WriteLogToFile("\n Error CustomStructOrClassptr was not Deleted/Freed In: NetAddr!\n");
 				}
-
-				IPv4Addr = nullptr;
-				IPv6Addr = nullptr;
 				IsConstructionSuccessful = false;
 			}
 		}
@@ -994,11 +1253,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	//NOTE: Array Number of 0 Is Reserved, So Array Number Starts from 1 to TotalNumberOfNetAddr(== (n * MaxUnderflowedFreeSpotsInArray) + 1)
 	//NOTE: Lets say Initially TotalNumberOfNetAddr = (1 * MaxUnderflowedFreeSpotsInArray) + 1 Once every Spots is Used
 	//NOTE: It will again be Filled with more free SpotsTotalNumberOfNetAddr = (2 * MaxUnderflowedFreeSpotsInArray) + 1 and So on until buffer overflow...
+	//NOTE: CustomStructOrClass_Constructorfunctionptr is used to construct(or store) any type of struct, class or any data for every Netaddr(Program Code for each connected client or anyother purpose)
+	//NOTE: CustomStructOrClass_Destructorfunctionptr is used to destruct(or free) the struct, class or data that is constructed by CustomStructOrClass_Constructorfunctionptr
 	struct NetAddrArray
 	{
 	private:
 		NetAddr** ArrayOfNetAddr = nullptr;
 		uint64_t TotalNumberOfNetAddr = 0;
+		void (*CustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful) = nullptr;
+		void (*CustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr) = nullptr;		
 
 		const uint64_t MaxReservedFreeSpotsInArray = 0;//If Every Reserved Spot the Used then new Reserved Spots with size MaxReservedFreeSpotsInArray is added the Array Is Reordered Only when Increasing
 		const uint64_t MaxUnderflowedFreeSpotsInArray = 0;//Reordered Only when Decreasing
@@ -1016,9 +1279,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 
 	public:
-		NetAddrArray(uint64_t ArgMaxReservedFreeSpotsInArray, uint64_t ArgMaxUnderflowedFreeSpotsInArray, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, NetAddr* BaseNetAddr = nullptr) : MaxReservedFreeSpotsInArray(ArgMaxReservedFreeSpotsInArray), MaxUnderflowedFreeSpotsInArray(ArgMaxUnderflowedFreeSpotsInArray), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
+		NetAddrArray(uint64_t ArgMaxReservedFreeSpotsInArray, uint64_t ArgMaxUnderflowedFreeSpotsInArray, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful), void (*ArgCustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr), NetAddr* BaseNetAddr = nullptr) : MaxReservedFreeSpotsInArray(ArgMaxReservedFreeSpotsInArray), MaxUnderflowedFreeSpotsInArray(ArgMaxUnderflowedFreeSpotsInArray), SentPacketsArchiveSize(ArgSentPacketsArchiveSize), ReceivedPacketsArchiveSize(ArgSentPacketsArchiveSize)
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddrArray!");
+
+			IsConstructionSuccessful = false;
 
 			ArrayOfNetAddr = nullptr;
 			TotalNumberOfNetAddr = 0;
@@ -1042,58 +1307,75 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					ReservedNetAddarSpotsInArray = (uint64_t*)calloc((MaxReservedFreeSpotsInArray), sizeof(uint64_t));
-					if (ReservedNetAddarSpotsInArray == nullptr)
+					if (ArgCustomStructOrClass_Constructorfunctionptr == nullptr)
 					{
-						Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxReservedFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
+						Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Constructorfunctionptr is nullptr In: NetAddrArray!\n");
 					}
 					else
 					{
-						UnderflowedNetAddarSpotsInArray = (uint64_t*)calloc((MaxUnderflowedFreeSpotsInArray), sizeof(uint64_t));
-						if (UnderflowedNetAddarSpotsInArray == nullptr)
+						if (ArgCustomStructOrClass_Destructorfunctionptr == nullptr)
 						{
-							free(ReservedNetAddarSpotsInArray);
-							Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxUnderflowedFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for UnderflowedNetAddarSpotsInArray In: NetAddrArray!\n");
+							Essenbp::WriteLogToFile("\n Error ArgCustomStructOrClass_Destructorfunctionptr is nullptr In: NetAddrArray!\n");
 						}
 						else
 						{
-							ReorderedArrayNumbers = (uint64_t*)calloc(((MaxReservedFreeSpotsInArray + MaxUnderflowedFreeSpotsInArray) * 2), sizeof(uint64_t));
-							if (ReorderedArrayNumbers == nullptr)
+							ReservedNetAddarSpotsInArray = (uint64_t*)calloc((MaxReservedFreeSpotsInArray), sizeof(uint64_t));
+							if (ReservedNetAddarSpotsInArray == nullptr)
 							{
-								free(UnderflowedNetAddarSpotsInArray);
-								free(ReservedNetAddarSpotsInArray);
-								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(((MaxReservedFreeSpotsInArray + MaxUnderflowedFreeSpotsInArray) * 2) * sizeof(uint64_t)) + " Byes Of Memory for ReorderedArrayNumbers In: NetAddrArray!\n");
+								Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxReservedFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for ReservedNetAddarSpotsInArray In: NetAddrArray!\n");
 							}
 							else
 							{
-								Essenbp::Malloc_PointerToArrayOfPointers((void***)&ArrayOfNetAddr, (MaxReservedFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
-								if (!IsConstructionSuccessful)
+								UnderflowedNetAddarSpotsInArray = (uint64_t*)calloc((MaxUnderflowedFreeSpotsInArray), sizeof(uint64_t));
+								if (UnderflowedNetAddarSpotsInArray == nullptr)
 								{
-									free(UnderflowedNetAddarSpotsInArray);
 									free(ReservedNetAddarSpotsInArray);
-									free(ReorderedArrayNumbers);
-									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxReservedFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for ArrayOfNetAddr In: NetAddrArray!\n");
+									Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxUnderflowedFreeSpotsInArray) * sizeof(uint64_t)) + " Byes Of Memory for UnderflowedNetAddarSpotsInArray In: NetAddrArray!\n");
 								}
 								else
 								{
-									for (uint64_t i = 0; i < MaxReservedFreeSpotsInArray; ++i)
+									ReorderedArrayNumbers = (uint64_t*)calloc(((MaxReservedFreeSpotsInArray + MaxUnderflowedFreeSpotsInArray) * 2), sizeof(uint64_t));
+									if (ReorderedArrayNumbers == nullptr)
 									{
-										ArrayOfNetAddr[i] = nullptr;
-										ReservedNetAddarSpotsInArray[i] = MaxReservedFreeSpotsInArray - i;
-										ReorderedArrayNumbers[(i * 2)] = 0;
-										ReorderedArrayNumbers[((i * 2) + 1)] = 0;
+										free(UnderflowedNetAddarSpotsInArray);
+										free(ReservedNetAddarSpotsInArray);
+										Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string(((MaxReservedFreeSpotsInArray + MaxUnderflowedFreeSpotsInArray) * 2) * sizeof(uint64_t)) + " Byes Of Memory for ReorderedArrayNumbers In: NetAddrArray!\n");
 									}
-									ArrayOfNetAddr[0] = BaseNetAddr;
+									else
+									{
+										Essenbp::Malloc_PointerToArrayOfPointers((void***)&ArrayOfNetAddr, (MaxReservedFreeSpotsInArray + 1), sizeof(NetAddr*), IsConstructionSuccessful);
+										if (!IsConstructionSuccessful)
+										{
+											free(UnderflowedNetAddarSpotsInArray);
+											free(ReservedNetAddarSpotsInArray);
+											free(ReorderedArrayNumbers);
+											Essenbp::WriteLogToFile("\n Error Allocating " + std::to_string((MaxReservedFreeSpotsInArray + 1) * sizeof(NetAddr*)) + " Byes Of Memory for ArrayOfNetAddr In: NetAddrArray!\n");
+										}
+										else
+										{
+											CustomStructOrClass_Constructorfunctionptr = ArgCustomStructOrClass_Constructorfunctionptr;
+											CustomStructOrClass_Destructorfunctionptr = ArgCustomStructOrClass_Destructorfunctionptr;
 
-									for (uint64_t i = 0; i < MaxUnderflowedFreeSpotsInArray; ++i)
-									{
-										UnderflowedNetAddarSpotsInArray[i] = 0;
-										ReorderedArrayNumbers[((i * 2) + MaxReservedFreeSpotsInArray)] = 0;
-										ReorderedArrayNumbers[((i * 2) + 1 + MaxReservedFreeSpotsInArray)] = 0;
+											for (uint64_t i = 0; i < MaxReservedFreeSpotsInArray; ++i)
+											{
+												ArrayOfNetAddr[i] = nullptr;
+												ReservedNetAddarSpotsInArray[i] = MaxReservedFreeSpotsInArray - i;
+												ReorderedArrayNumbers[(i * 2)] = 0;
+												ReorderedArrayNumbers[((i * 2) + 1)] = 0;
+											}
+											ArrayOfNetAddr[0] = BaseNetAddr;
+
+											for (uint64_t i = 0; i < MaxUnderflowedFreeSpotsInArray; ++i)
+											{
+												UnderflowedNetAddarSpotsInArray[i] = 0;
+												ReorderedArrayNumbers[((i * 2) + MaxReservedFreeSpotsInArray)] = 0;
+												ReorderedArrayNumbers[((i * 2) + 1 + MaxReservedFreeSpotsInArray)] = 0;
+											}
+											RemainingNumberOfReservedNetAddarSpotsInArray = MaxReservedFreeSpotsInArray;
+											RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;
+											TotalNumberOfReorderedArray = 0;
+										}
 									}
-									RemainingNumberOfReservedNetAddarSpotsInArray = MaxReservedFreeSpotsInArray;
-									RemainingNumberOfUnderflowedNetAddarSpotsInArray = 0;
-									TotalNumberOfReorderedArray = 0;
 								}
 							}
 						}
@@ -1126,7 +1408,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					//NOTE: The Spot Array Number 0 Is Reserved
 					if (RemainingNumberOfUnderflowedNetAddarSpotsInArray > 0)
 					{
-						ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+						ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize, CustomStructOrClass_Constructorfunctionptr);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] != nullptr)
 						{
 							if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
@@ -1150,7 +1432,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						if (RemainingNumberOfReservedNetAddarSpotsInArray > 0)
 						{
 							//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
-							ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+							ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize, CustomStructOrClass_Constructorfunctionptr);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
 							{
 								if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
@@ -1237,7 +1519,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					//NOTE: The Spot Array Number 0 Is Reserved
 					if (RemainingNumberOfUnderflowedNetAddarSpotsInArray > 0)
 					{
-						ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+						ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize, CustomStructOrClass_Constructorfunctionptr);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 						if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]] != nullptr)
 						{
 							if (ArrayOfNetAddr[UnderflowedNetAddarSpotsInArray[(RemainingNumberOfUnderflowedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
@@ -1261,7 +1543,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						if (RemainingNumberOfReservedNetAddarSpotsInArray > 0)
 						{
 							//ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] == Fills the First Unused Element
-							ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
+							ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] = new NetAddr(Socket, ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)], Address, SentPacketsArchiveSize, ReceivedPacketsArchiveSize, CustomStructOrClass_Constructorfunctionptr);// NO need for IsSuccessful Constrction check as it is not needed in this simple struct
 							if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]] != nullptr)
 							{
 								if (ArrayOfNetAddr[ReservedNetAddarSpotsInArray[(RemainingNumberOfReservedNetAddarSpotsInArray - 1)]]->IsConstructionSuccessful == false)
@@ -1367,6 +1649,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 							{
 								if (ArrayNumber > ((TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray + RemainingNumberOfReservedNetAddarSpotsInArray) - MaxReservedFreeSpotsInArray))
 								{
+									ArrayOfNetAddr[ArrayNumber]->FreeOrDeleteCustomStructOrClassptr(CustomStructOrClass_Destructorfunctionptr);
 									delete ArrayOfNetAddr[ArrayNumber];
 									ArrayOfNetAddr[ArrayNumber] = nullptr;
 									//Reorders the the Reserved Array
@@ -1395,6 +1678,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									//NOTE: If the ArrayNumber is Equal to the Last Usable slot, then the slot can be added to reserved slot number [0] and shifting [i] = [i-1] till i > 0  wihout chaning the size of the reserved array
 									if (ArrayNumber == ((TotalNumberOfNetAddr + RemainingNumberOfUnderflowedNetAddarSpotsInArray + RemainingNumberOfReservedNetAddarSpotsInArray) - MaxReservedFreeSpotsInArray))
 									{
+										ArrayOfNetAddr[ArrayNumber]->FreeOrDeleteCustomStructOrClassptr(CustomStructOrClass_Destructorfunctionptr);
 										delete ArrayOfNetAddr[ArrayNumber];
 										ArrayOfNetAddr[ArrayNumber] = nullptr;
 										for (uint64_t i = RemainingNumberOfReservedNetAddarSpotsInArray - 1; i > 0; --i)
@@ -1422,6 +1706,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 											{
 												TotalNumberOfNetAddr = TotalNumberOfNetAddr - 1;
 												IsArrayReordered = true;
+												ArrayOfNetAddr[ArrayNumber]->FreeOrDeleteCustomStructOrClassptr(CustomStructOrClass_Destructorfunctionptr);
 												delete ArrayOfNetAddr[ArrayNumber];
 												ArrayOfNetAddr[ArrayNumber] = nullptr;
 												//Reorders the the Underflowed Array
@@ -1534,6 +1819,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 										}
 										else
 										{
+											ArrayOfNetAddr[ArrayNumber]->FreeOrDeleteCustomStructOrClassptr(CustomStructOrClass_Destructorfunctionptr);
 											delete ArrayOfNetAddr[ArrayNumber];
 											//Reorders the the Underflowed Array
 											uint64_t i = 0;
@@ -1670,6 +1956,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					{
 						if (ArrayOfNetAddr[i] != nullptr)
 						{
+							ArrayOfNetAddr[i]->FreeOrDeleteCustomStructOrClassptr(CustomStructOrClass_Destructorfunctionptr);
 							delete ArrayOfNetAddr[i];
 							ArrayOfNetAddr[i] = nullptr;
 						}
