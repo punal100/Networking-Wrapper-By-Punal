@@ -525,33 +525,48 @@ namespace Essenbp//Essential Functions By Punal
 				if (TotalNumberOfUnknownData == 1)
 				{
 					delete ArrayOfUnknownData[0];
+					TotalNumberOfUnknownData = 0;
+
+					free(ArrayOfUnknownData);
+					ArrayOfUnknownData = nullptr;
 				}
 				else
 				{
-					//The Gap is filled by next element, and the next element's gap is filled by the element next to it, and so on until last element
-					//Example 1,2,3,4,5
-					//Remove 3
-					//1,2, gap ,4,5
-					//4 fills 3rd gap
-					//1,2,4, gap ,5
-					//5 fills 4rd gap
-					//1,2,4,5, gap
-					//1,2,4,5 (gap is deleted)
-					UnknownDataAndSizeStruct* TempChangeptr = ArrayOfUnknownData[ElementNumber];
-
-					for (int i = TotalNumberOfUnknownData - 1; i > ElementNumber; --i)
-					{
-						ArrayOfUnknownData[(i - 1)] = ArrayOfUnknownData[i];
-					}
-					ArrayOfUnknownData[TotalNumberOfUnknownData - 1] = TempChangeptr;
-
-					ResizeArray(TotalNumberOfUnknownData - 1, Issuccessful);
+					UnknownDataAndSizeStruct** TempUnknownData = nullptr;
+					Malloc_PointerToArrayOfPointers((void***)&TempUnknownData, (TotalNumberOfUnknownData - 1), sizeof(UnknownDataAndSizeStruct*), Issuccessful);
 					if (!Issuccessful)
 					{
-						WriteLogToFile("\n Error ResizeArray failed in RemoveElement In: ArrayOfUnknownDataAndSize!\n");
+						WriteLogToFile("\n Error Malloc_PointerToArrayOfPointers failed in ResizeArray In: ArrayOfUnknownDataAndSize!\n");
+					}
+					else
+					{
+						//The Gap is filled by next element, and the next element's gap is filled by the element next to it, and so on until last element
+						//Example 1,2,3,4,5
+						//Remove 3
+						//1,2, gap ,4,5
+						//4 fills 3rd gap
+						//1,2,4, 4 ,5
+						//5 fills 4th
+						//1,2,4,5,5
+						//1,2,4,5 (redundant second 5 ptr at the last is removed)
+						delete ArrayOfUnknownData[ElementNumber];
+
+						uint64_t i = ElementNumber;
+						for (i = ElementNumber; i < (TotalNumberOfUnknownData - 1); ++i)
+						{
+							ArrayOfUnknownData[i] = ArrayOfUnknownData[i + 1];
+						}
+
+						TotalNumberOfUnknownData = TotalNumberOfUnknownData - 1;
+						ArrayOfUnknownData[TotalNumberOfUnknownData] = nullptr;
+
+						for (i = 0; i < TotalNumberOfUnknownData; ++i)
+						{
+							TempUnknownData[i] = ArrayOfUnknownData[i];
+						}
+						ArrayOfUnknownData = TempUnknownData;
 					}
 				}
-
 			}
 		}
 
