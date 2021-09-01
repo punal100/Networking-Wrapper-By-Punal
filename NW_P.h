@@ -152,400 +152,6 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	}
 
-	//NOTE: Similar to UnknownDataAndSizeStruct But the Data is Stored in Big Endian Format
-	//NOTE: Pass Each Variable One by One like this CopyAndStoreData(Data, SizeOfData, Issuccessful, false, AppendData = true)
-	//NOTE: If Each Variable Is Not Passed One by One, Then Expect Undefined Behaviours...
-	struct NetworkDataAndSizeStruct
-	{
-	private:
-		char* Data = nullptr;
-		size_t SizeOfData = 0;
-
-	public:
-		NetworkDataAndSizeStruct()
-		{
-			Essenbp::WriteLogToFile("\n Constructing NetworkDataAndSizeStruct!");
-			if (!EndianCheckDone)
-			{
-				NW_PCheckIfLittleEndian();
-			}
-		}
-
-		void FreeData()
-		{
-			if (Data != nullptr)
-			{
-				free(Data);//Free Previous Data
-				Data = nullptr;
-				SizeOfData = 0;
-			}
-		}
-
-		//NOTE DoADummyCopy stores only the Size but not the data
-		void CopyAndStoreData(void* ArgData, size_t ArgSizeOfData, bool& Issuccessful, bool DoADummyCopy = false, bool AppendData = false)
-		{
-			Issuccessful = false;
-
-			if (!DoADummyCopy)
-			{
-				if (ArgData == nullptr)
-				{
-					Essenbp::WriteLogToFile("\n Error nullptr for ArgData in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-					Essenbp::WriteLogToFile("If Dummy Value is to be passed set DoADummyCopy(4th argument) to false, and set ArgData = nullptr!\n");
-				}
-				else
-				{
-					if (AppendData)
-					{
-						if (ArgSizeOfData == 0)
-						{
-							Essenbp::WriteLogToFile("\n Error Size Of ArgSizeOfData is Equal to Zero in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-							return;
-						}
-
-						char* AppendDataHelper = (char*)malloc((SizeOfData + ArgSizeOfData));// Setting Current
-						if (AppendDataHelper == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating : " + std::to_string(SizeOfData + ArgSizeOfData) + " Byes Of Memory for Data in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-							return;
-						}
-						else
-						{
-							//PENDING CHECK FOR ERROR
-							size_t PreviousSize = SizeOfData;
-							SizeOfData = SizeOfData + ArgSizeOfData;// Current Size
-
-							for (size_t i = 0; i < PreviousSize; ++i)// Memccpy bad
-							{
-								AppendDataHelper[i] = ((char*)Data)[i];// I could simply convert void* to char*... but i left it as void* for the purpose of 'readability'
-							}
-
-							if (IsLittleEndian)
-							{								
-								if (ArgSizeOfData != 0)
-								{
-									size_t i = (ArgSizeOfData - 1);
-									while (true)
-									{
-										//Visual Studio 2019 Is saying Buffer Overrun by 2 bytes for AppendDatHelper, the writable size is only (SizeOfData + ArgSizeOfData)
-										//But Evrything is Correct here? Buffer overrun is impossible!
-										// I could simply convert void* to char*... but i left it as void* for the purpose of 'readability'
-										AppendDataHelper[(i + PreviousSize)] = ((char*)ArgData)[i];
-										if (i == 0)
-										{
-											break;
-										}
-										else
-										{
-											i = i - 1;
-										}
-									}
-								}
-							}
-							else
-							{
-								for (size_t i = 0; i < ArgSizeOfData; ++i)// Memccpy bad
-								{
-									//Visual Studio 2019 Is saying Buffer Overrun by 2 bytes for AppendDatHelper, the writable size is only (SizeOfData + ArgSizeOfData)
-									//But Evrything is Correct here? Buffer overrun is impossible!
-									AppendDataHelper[(i + PreviousSize)] = ((char*)ArgData)[i];// I could simply convert void* to char*... but i left it as void* for the purpose of 'readability'
-								}
-							}
-
-							FreeData();
-							Data = AppendDataHelper;
-							Issuccessful = true;
-						}
-					}
-					else
-					{
-						if (ArgSizeOfData == 0)
-						{
-							Essenbp::WriteLogToFile("\n Error Size Of SizeOfData is Equal to Zero in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-							return;
-						}
-						FreeData();
-						SizeOfData = ArgSizeOfData;
-						Data = (char*)malloc(SizeOfData);
-						if (Data == nullptr)
-						{
-							SizeOfData = 0;
-							Essenbp::WriteLogToFile("\n Error Allocating : " + std::to_string(SizeOfData) + " Byes Of Memory for Data in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-							return;
-						}
-						else
-						{
-							if (IsLittleEndian)
-							{
-								if (ArgSizeOfData != 0)
-								{
-									size_t i = (ArgSizeOfData - 1);
-									while (true)
-									{
-										//Visual Studio 2019 Is saying Buffer Overrun by 2 bytes for AppendDatHelper, the writable size is only (SizeOfData + ArgSizeOfData)
-										//But Evrything is Correct here? Buffer overrun is impossible!
-										// I could simply convert void* to char*... but i left it as void* for the purpose of 'readability'
-										Data[i] = ((char*)ArgData)[i];
-										if (i == 0)
-										{
-											break;
-										}
-										else
-										{
-											i = i - 1;
-										}
-									}
-								}
-							}
-							else
-							{
-								for (size_t i = 0; i < ArgSizeOfData; ++i)// Memccpy bad
-								{
-									//Visual Studio 2019 Is saying Buffer Overrun by 2 bytes for AppendDatHelper, the writable size is only (SizeOfData + ArgSizeOfData)
-									//But Evrything is Correct here? Buffer overrun is impossible!
-									Data[i] = ((char*)ArgData)[i];// I could simply convert void* to char*... but i left it as void* for the purpose of 'readability'
-								}
-							}
-							Issuccessful = true;
-						}
-					}
-				}
-			}
-			else
-			{
-				if (ArgData != nullptr)
-				{
-					Essenbp::WriteLogToFile("\n Error ArgData is not set to nullptr in CopyAndStoreData In: NetworkDataAndSizeStruct!\n");
-					Essenbp::WriteLogToFile("If Actual value is to be passed ignore DoADummyCopy(4th argument)!\n");
-					return;
-				}
-				else
-				{
-					FreeData();
-					SizeOfData = ArgSizeOfData;
-					Issuccessful = true;
-				}
-			}
-		}
-
-		char* GetData() { return Data; }
-		size_t GetDataSize() { return SizeOfData; }
-
-		//NOTE: Use this if Direct access to data is required
-		//NOTE: by using this
-		void FreeAndResizeData(size_t ArgSizeOfData, bool& Issuccessful)
-		{
-			Issuccessful = false;
-
-			FreeData();
-			if (ArgSizeOfData == 0)
-			{
-				Essenbp::WriteLogToFile("\n Error Size Of SizeOfData is Equal to Zero in FreeAndResizeDataAndReturnPointerToDataPointer In: NetworkDataAndSizeStruct!\n");
-				return;
-			}
-			Data = (char*)malloc(ArgSizeOfData);
-			if (Data == nullptr)
-			{
-				Essenbp::WriteLogToFile("\n Error Allocating : " + std::to_string(SizeOfData) + " Byes Of Memory for Data in FreeAndResizeDataAndReturnPointerToDataPointer In: NetworkDataAndSizeStruct!\n");
-				return;
-			}
-			SizeOfData = ArgSizeOfData;
-			Issuccessful = true;
-		}
-
-		//NOTE: The Data Is Returned But, not released, SO USE THIS WITH CAUTION, if being careless then there is a HUGE chance of memory leak
-		void GetDataAndSizeAndSetDataToNull(void** ReturnData, size_t& ReturnDataSize)
-		{
-			if (ReturnData != nullptr)
-			{
-				*ReturnData = Data;
-				ReturnDataSize = SizeOfData;
-				Data = nullptr;
-				SizeOfData = 0;
-			}
-			else
-			{
-				Essenbp::WriteLogToFile("\n Error Argument ReturnData is nullptr in GetDataAndSizeAndSetDataToNull In: NetworkDataAndSizeStruct!\n");
-			}
-		}
-
-		//NOTE: Data Starts from 0
-		//NOTE: Max Size is From = 0, To = SizeOfData - 1
-		void ReverseDataOrder(size_t From, size_t To, bool& IsSuccessful)
-		{
-			IsSuccessful = false;
-			if (To < SizeOfData)
-			{
-				Essenbp::ReverseDataOrder((void*)Data, From, To, IsSuccessful);
-				if (!IsSuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error Essenbp::ReverseDataOrder in in ReverseDataOrder In: NetworkDataAndSizeStruct!\n");
-				}
-			}
-			else
-			{
-				Essenbp::WriteLogToFile("\n Error To Is greater than SizeOfData in ReverseDataOrder In: NetworkDataAndSizeStruct!\n");
-			}
-		}
-
-		~NetworkDataAndSizeStruct()
-		{
-			FreeData();
-		}
-	};
-
-	struct ArrayOfNetworkDataAndSize
-	{
-	private:
-		unsigned int TotalNumberOfNetworkData = 0;
-		NetworkDataAndSizeStruct** ArrayOfNetworkData = nullptr;
-
-	public:
-		void ResizeArray(unsigned int TotalNumber, bool& Issuccessful)
-		{
-			Issuccessful = false;
-
-			NetworkDataAndSizeStruct** TempNetworkData = nullptr;
-			Essenbp::Malloc_PointerToArrayOfPointers((void***)&TempNetworkData, TotalNumber, sizeof(NetworkDataAndSizeStruct*), Issuccessful);
-			if (!Issuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error Essenbp::Malloc_PointerToArrayOfPointers failed in ResizeArray In: ArrayOfNetworkDataAndSize!\n");
-			}
-			else
-			{
-				Issuccessful = true;
-				int MaxLimit = (TotalNumber < TotalNumberOfNetworkData) ? TotalNumber : TotalNumberOfNetworkData;
-
-				for (int i = 0; i < MaxLimit; ++i)
-				{
-					TempNetworkData[i] = ArrayOfNetworkData[i];
-				}
-				if (TotalNumber > TotalNumberOfNetworkData)
-				{
-					for (int i = TotalNumberOfNetworkData; i < TotalNumber; ++i)
-					{
-						TempNetworkData[i] = new NetworkDataAndSizeStruct();
-						if (TempNetworkData[i] == nullptr)
-						{
-							Essenbp::WriteLogToFile("\n Error Allocating Bytes of Data for NetworkDataAndSizeStruct[" + std::to_string(i) + "] in ResizeArray In: ArrayOfNetworkDataAndSize!\n");
-							for (int j = 0; j < i; ++j)
-							{
-								delete TempNetworkData[j];
-							}
-							free(TempNetworkData);
-							Issuccessful = false;
-							break;
-						}
-					}
-				}
-				else
-				{
-					for (int j = TotalNumber; j < TotalNumberOfNetworkData; ++j)
-					{
-						delete ArrayOfNetworkData[j];
-					}
-				}
-
-				if (!Issuccessful)
-				{
-					Essenbp::WriteLogToFile("\n Error ResizeArray failed In: ArrayOfNetworkDataAndSize!\n");
-				}
-				else
-				{
-					ArrayOfNetworkData = TempNetworkData;
-					TotalNumberOfNetworkData = TotalNumber;
-				}
-			}
-		}
-	
-		ArrayOfNetworkDataAndSize()
-		{
-			Essenbp::WriteLogToFile("\n Constructing ArrayOfNetworkDataAndSize!");
-			if (!EndianCheckDone)
-			{
-				NW_PCheckIfLittleEndian();
-			}
-		}
-
-		void AddElement(bool& Issuccessful)
-		{
-			Issuccessful = false;
-			ResizeArray(TotalNumberOfNetworkData + 1, Issuccessful);
-			if (!Issuccessful)
-			{
-				Essenbp::WriteLogToFile("\n Error ResizeArray failed in AddElement In: ArrayOfNetworkDataAndSize!\n");
-			}
-		}
-
-		void RemoveElement(unsigned int ElementNumber, bool& Issuccessful)
-		{
-			Issuccessful = false;
-			if (ElementNumber > TotalNumberOfNetworkData)
-			{
-				Essenbp::WriteLogToFile("\n Error ElementNumber Exceeds the total number of Network Data Present! in RemoveElement in AddElement In: ArrayOfNetworkDataAndSize!\n");
-			}
-			else
-			{
-				if (TotalNumberOfNetworkData == 1)
-				{
-					delete ArrayOfNetworkData[0];
-				}
-				else
-				{
-					//The Gap is filled by next element, and the next element's gap is filled by the element next to it, and so on until last element
-					//Example 1,2,3,4,5
-					//Remove 3
-					//1,2, gap ,4,5
-					//4 fills 3rd gap
-					//1,2,4, gap ,5
-					//5 fills 4rd gap
-					//1,2,4,5, gap
-					//1,2,4,5 (gap is deleted)
-					NetworkDataAndSizeStruct* TempChangeptr = ArrayOfNetworkData[ElementNumber];
-
-					for (int i = TotalNumberOfNetworkData - 1; i > ElementNumber; --i)
-					{
-						ArrayOfNetworkData[(i - 1)] = ArrayOfNetworkData[i];
-					}
-					ArrayOfNetworkData[TotalNumberOfNetworkData - 1] = TempChangeptr;
-
-					ResizeArray(TotalNumberOfNetworkData - 1, Issuccessful);
-					if (!Issuccessful)
-					{
-						Essenbp::WriteLogToFile("\n Error ResizeArray failed in RemoveElement In: ArrayOfNetworkDataAndSize!\n");
-					}
-				}
-
-			}
-		}
-
-		unsigned int GetTotalNumberOfNetworkData()
-		{
-			return TotalNumberOfNetworkData;
-		}
-
-		void GetData(unsigned int ElementNumber, NetworkDataAndSizeStruct** ReturnNetworkDataAndSize, bool& Issuccessful)
-		{
-			if (ElementNumber < TotalNumberOfNetworkData)
-			{
-				*ReturnNetworkDataAndSize = ArrayOfNetworkData[ElementNumber];
-			}
-			else
-			{
-				Essenbp::WriteLogToFile("\n Error ElementNumber Exceeds the total number of Network Data Present! in GetData in AddElement In: ArrayOfNetworkDataAndSize!\n");
-			}
-		}
-
-		~ArrayOfNetworkDataAndSize()
-		{
-			for (int j = 0; j < TotalNumberOfNetworkData; ++j)
-			{
-				delete ArrayOfNetworkData[j];
-			}
-			free(ArrayOfNetworkData);
-		}
-	};	
-
 	//NOTE: Use NetAddr Struct Instead of NetAddrIPv4/6
 	struct NetAddrIPv4
 	{
@@ -558,8 +164,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
-		ArrayOfNetworkDataAndSize SentPackets;
-		ArrayOfNetworkDataAndSize ReceivedPackets;
+		Essenbp::ArrayOfUnknownDataAndSize SentPackets;
+		Essenbp::ArrayOfUnknownDataAndSize ReceivedPackets;
 		uint16_t SentCount = 0;//		NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
 		uint16_t ReceivedCount = 0;//	NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
 
@@ -575,14 +181,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv4!");
+				Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv4!");
 			}
 			else
 			{
 				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
 				if (!IsConstructionSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv4!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv4!");
 				}
 			}
 
@@ -602,18 +208,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				Essenbp::UnknownDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
 				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv4!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv4!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv4!");
+						Essenbp::WriteLogToFile("\n Error Essenbp::UnknownDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv4!");
 					}
 					else
 					{
@@ -638,18 +244,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				Essenbp::UnknownDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
 				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv4!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv4!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv4!");
+						Essenbp::WriteLogToFile("\n Error Essenbp::UnknownDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv4!");
 					}
 					else
 					{
@@ -700,8 +306,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
-		ArrayOfNetworkDataAndSize SentPackets;
-		ArrayOfNetworkDataAndSize ReceivedPackets;
+		Essenbp::ArrayOfUnknownDataAndSize SentPackets;
+		Essenbp::ArrayOfUnknownDataAndSize ReceivedPackets;
 		uint16_t SentCount = 0;//		NOTE: Counter Resets to 0 When Max SentPacketsArchiveSize		Is Reached, Previous Data at 0 and so on will be Overwritten
 		uint16_t ReceivedCount = 0;//	NOTE: Counter Resets to 0 When Max ReceivedPacketsArchiveSize	Is Reached, Previous Data at 0 and so on will be Overwritten
 
@@ -717,14 +323,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			SentPackets.ResizeArray(SentPacketsArchiveSize, IsConstructionSuccessful);
 			if (!IsConstructionSuccessful)
 			{
-				Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv6!");
+				Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::ResizeArray for SentPackets Failed NetAddrIPv6!");
 			}
 			else
 			{
 				ReceivedPackets.ResizeArray(ReceivedPacketsArchiveSize, IsConstructionSuccessful);
 				if (!IsConstructionSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv6!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::ResizeArray for ReceivedPackets Failed NetAddrIPv6!");
 				}
 			}
 
@@ -744,18 +350,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				Essenbp::UnknownDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
 				SentPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv6!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::GetData Failed in AddSentPackage In: NetAddrIPv6!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv6!");
+						Essenbp::WriteLogToFile("\n Error Essenbp::UnknownDataAndSizeStruct::CopyAndStoreData Failed in AddSentPackage In: NetAddrIPv6!");
 					}
 					else
 					{
@@ -780,18 +386,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				NetworkDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
+				Essenbp::UnknownDataAndSizeStruct* PtrToDataAndDataSize = nullptr;
 				ReceivedPackets.GetData(SentCount, &PtrToDataAndDataSize, IsSuccessful);
 				if (!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error ArrayOfNetworkDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv6!");
+					Essenbp::WriteLogToFile("\n Error Essenbp::ArrayOfUnknownDataAndSize::GetData Failed in AddReceivedPackage In: NetAddrIPv6!");
 				}
 				else
 				{
 					PtrToDataAndDataSize->CopyAndStoreData(Data, DataSize, IsSuccessful);
 					if (!IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv6!");
+						Essenbp::WriteLogToFile("\n Error Essenbp::UnknownDataAndSizeStruct::CopyAndStoreData Failed in AddReceivedPackage In: NetAddrIPv6!");
 					}
 					else
 					{
@@ -2042,6 +1648,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//NOTE: This Is Only  For Client
 		NetAddr* ThisClient = nullptr;
 
+		//NOTE: This is used to Subdivide received Data Into Multiple Parts(1,2,3,4,5,...,m Bytes) for processing
+		Essenbp::ArrayOfUnknownDataAndSize NetworkDataconstructionHelper;
+		//NOTE: 'n' referts to the number of Types of Received Data Present 
+		//NOTE: 'n' = 0 is Reserved it Determines (8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Command, 2 Byte Sent/Received Packet Number)
+		//NOTE: 'n' = 0 Is for Header Information specific for this NetworkWrapper(NW_P)//PENDING
+		//NOTE:	Example:NetworkDataconstructionHelper.GetData('n', &ReturnVal, IsSuccessful)
+
 		//PENDING add Atomic Bool for this
 		void ClientAddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
 		{
@@ -2274,7 +1887,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			//}
 		}
 
-		void SendDataUDP(const sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataUDP(const sockaddr_in* DestinationAddress, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2300,7 +1913,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}		
 
-		void SendDataUDP(const sockaddr_in6* DestinationAddress, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataUDP(const sockaddr_in6* DestinationAddress, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2328,7 +1941,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//NOTE:Server = TCP ONly
 		//NOTE:Client = UDP(Connected) And TCP
-		void SendDataTCPUDP(const SOCKET* DestinationSOCKET, NetworkDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataTCPUDP(const SOCKET* DestinationSOCKET, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2408,7 +2021,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 	public:
 		//For Server to Client
-		void SendData(uint64_t ClientNumber, NetworkDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
+		void SendData(uint64_t ClientNumber, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2491,7 +2104,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//For Client To Server
-		void SendData(NetworkDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
+		void SendData(Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2604,7 +2217,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					NetworkDataAndSizeStruct DataAndSize;
+					Essenbp::UnknownDataAndSizeStruct DataAndSize;
 					char* SendDataChar = (char*)malloc(24);
 					if (SendDataChar == nullptr)
 					{
@@ -2737,7 +2350,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 		}
-		void ServerSideConnectionDisconnectionConfirmationUDP(bool SendTempPassword_Or_VerifyReceivedTempPassword, const sockaddr_in* DestinationAddress, NetworkDataAndSizeStruct& SentDataOrReceivedData, uint32_t& TempPassword, bool& IsSuccessful)
+		void ServerSideConnectionDisconnectionConfirmationUDP(bool SendTempPassword_Or_VerifyReceivedTempPassword, const sockaddr_in* DestinationAddress, Essenbp::UnknownDataAndSizeStruct& SentDataOrReceivedData, uint32_t& TempPassword, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2848,7 +2461,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 			}
 		}
-		void ServerSideConnectionDisconnectionConfirmationUDP(bool SendTempPassword_Or_VerifyReceivedTempPassword, const sockaddr_in6* DestinationAddress, NetworkDataAndSizeStruct& SentDataOrReceivedData, uint32_t& TempPassword, bool& IsSuccessful)
+		void ServerSideConnectionDisconnectionConfirmationUDP(bool SendTempPassword_Or_VerifyReceivedTempPassword, const sockaddr_in6* DestinationAddress, Essenbp::UnknownDataAndSizeStruct& SentDataOrReceivedData, uint32_t& TempPassword, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2981,7 +2594,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					NetworkDataAndSizeStruct SentDataOrReceivedData;
+					Essenbp::UnknownDataAndSizeStruct SentDataOrReceivedData;
 					char* SendDataChar = (char*)malloc(24);
 					if (SendDataChar == nullptr)
 					{
@@ -3736,10 +3349,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					ClientSentPackets = new ArrayOfNetworkDataAndSize;
+					ClientSentPackets = new Essenbp::ArrayOfUnknownDataAndSize;
 					if (ClientSentPackets != nullptr)
 					{
-						ClientReceivedPackets = new ArrayOfNetworkDataAndSize;
+						ClientReceivedPackets = new Essenbp::ArrayOfUnknownDataAndSize;
 						if (ClientReceivedPackets == nullptr)
 						{
 							delete ClientSentPackets;

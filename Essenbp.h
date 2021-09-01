@@ -427,71 +427,80 @@ namespace Essenbp//Essential Functions By Punal
 
 	struct ArrayOfUnknownDataAndSize
 	{
-	private:
 		unsigned int TotalNumberOfUnknownData = 0;
 		UnknownDataAndSizeStruct** ArrayOfUnknownData = nullptr;
+
+	public:
 
 		void ResizeArray(unsigned int TotalNumber, bool& Issuccessful)
 		{
 			Issuccessful = false;
 
-			UnknownDataAndSizeStruct** TempUnknownData = nullptr;
-			Malloc_PointerToArrayOfPointers((void***)&TempUnknownData, TotalNumber, sizeof(UnknownDataAndSizeStruct*), Issuccessful);
-			if (!Issuccessful)
+			if (TotalNumber <= TotalNumberOfUnknownData)
 			{
-				WriteLogToFile("\n Error Malloc_PointerToArrayOfPointers failed in ResizeArray In: ArrayOfUnknownDataAndSize!\n");
+				WriteLogToFile("\n Error TotalNumber Should be Greater than TotalNumberOfUnknownData ResizeArray In: ArrayOfUnknownDataAndSize!\n");
 			}
 			else
 			{
-				Issuccessful = true;
-				int MaxLimit = (TotalNumber < TotalNumberOfUnknownData) ? TotalNumber : TotalNumberOfUnknownData;
-
-				for (int i = 0; i < MaxLimit; ++i)
-				{
-					TempUnknownData[i] = ArrayOfUnknownData[i];
-				}
-				if (TotalNumber > TotalNumberOfUnknownData)
-				{
-					for (int i = TotalNumberOfUnknownData; i < TotalNumber; ++i)
-					{
-						TempUnknownData[i] = new UnknownDataAndSizeStruct();
-						if (TempUnknownData[i] == nullptr)
-						{
-							WriteLogToFile("\n Error Allocating Bytes of Data for UnknownDataAndSizeStruct[" + std::to_string(i) + "] in ResizeArray In: ArrayOfUnknownDataAndSize!\n");
-							for (int j = 0; j < i; ++j)
-							{
-								delete TempUnknownData[j];
-							}
-							free(TempUnknownData);
-							Issuccessful = false;
-							break;
-						}
-					}
-				}
-				else
-				{
-					for (int j = TotalNumber; j < TotalNumberOfUnknownData; ++j)
-					{
-						delete ArrayOfUnknownData[j];
-					}
-				}
-
+				UnknownDataAndSizeStruct** TempUnknownData = nullptr;
+				Malloc_PointerToArrayOfPointers((void***)&TempUnknownData, TotalNumber, sizeof(UnknownDataAndSizeStruct*), Issuccessful);
 				if (!Issuccessful)
 				{
-					WriteLogToFile("\n Error ResizeArray failed In: ArrayOfUnknownDataAndSize!\n");
+					WriteLogToFile("\n Error Malloc_PointerToArrayOfPointers failed in ResizeArray In: ArrayOfUnknownDataAndSize!\n");
 				}
 				else
 				{
-					ArrayOfUnknownData = TempUnknownData;
-					TotalNumberOfUnknownData = TotalNumber;
+					Issuccessful = true;
+					int MaxLimit = (TotalNumber < TotalNumberOfUnknownData) ? TotalNumber : TotalNumberOfUnknownData;
+
+					for (int i = 0; i < MaxLimit; ++i)
+					{
+						TempUnknownData[i] = ArrayOfUnknownData[i];
+					}
+					if (TotalNumber > TotalNumberOfUnknownData)
+					{
+						for (int i = TotalNumberOfUnknownData; i < TotalNumber; ++i)
+						{
+							TempUnknownData[i] = new UnknownDataAndSizeStruct();
+							if (TempUnknownData[i] == nullptr)
+							{
+								WriteLogToFile("\n Error Allocating Bytes of Data for UnknownDataAndSizeStruct[" + std::to_string(i) + "] in ResizeArray In: ArrayOfUnknownDataAndSize!\n");
+								for (int j = 0; j < i; ++j)
+								{
+									delete TempUnknownData[j];
+								}
+								free(TempUnknownData);
+								Issuccessful = false;
+								break;
+							}
+						}
+					}
+					else
+					{
+						for (int j = TotalNumber; j < TotalNumberOfUnknownData; ++j)
+						{
+							delete ArrayOfUnknownData[j];
+						}
+					}
+
+					if (!Issuccessful)
+					{
+						WriteLogToFile("\n Error ResizeArray failed In: ArrayOfUnknownDataAndSize!\n");
+					}
+					else
+					{
+						ArrayOfUnknownData = TempUnknownData;
+						TotalNumberOfUnknownData = TotalNumber;
+					}
 				}
 			}
 		}
-
-	public:
+	
 		ArrayOfUnknownDataAndSize()
 		{
 			WriteLogToFile("\n Constructing ArrayOfUnknownDataAndSize!");
+			TotalNumberOfUnknownData = 0;
+			ArrayOfUnknownData = nullptr;
 		}
 
 		void AddElement(bool& Issuccessful)
