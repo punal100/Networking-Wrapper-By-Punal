@@ -651,6 +651,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	//NOTE: This is meant for NetAddrArray Which Takes care of its construction and destruction
 	//NOTE: For this Version The CustomStructOrClassptr Data is to be Destroyed Externally, The Plus point of this is that this has less size...
 	//NOTE: In Other Words ALWAYS REMEMBER TO SAFELY DELETE THIS(But anyway NO Manual destruction is required since This NetAddrArray will take care of it)
+	//NOTE: For UDP Netaddr set the Socket to NULL
 	struct NetAddr
 	{
 	public:
@@ -660,6 +661,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		bool IsConstructionSuccessful;
 
+		//NOTE: For UDP Netaddr set the ArgSocket to NULL
 		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful)) : TrueForIPv6FalseForIPv4(false), IPAddr(new NetAddrIPv4(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
@@ -702,6 +704,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		//NOTE: For UDP Netaddr set the ArgSocket to NULL
 		NetAddr(SOCKET ArgSocket, uint64_t ArgUniqueNumber, sockaddr_in6 ArgNetAddress, uint16_t ArgSentPacketsArchiveSize, uint16_t ArgReceivedPacketsArchiveSize, void (*ArgCustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful)) : TrueForIPv6FalseForIPv4(true), IPAddr(new NetAddrIPv6(ArgSocket, ArgUniqueNumber, ArgNetAddress, ArgSentPacketsArchiveSize, ArgReceivedPacketsArchiveSize))
 		{
 			Essenbp::WriteLogToFile("\n Constructing NetAddr!");
@@ -817,6 +820,18 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			else
 			{
 				return ((NetAddrIPv4*)IPAddr)->GetUniqueNumber();
+			}
+		}
+
+		SOCKET GetSocket()
+		{
+			if (TrueForIPv6FalseForIPv4)
+			{
+				return ((NetAddrIPv6*)IPAddr)->Socket;
+			}
+			else
+			{
+				return ((NetAddrIPv4*)IPAddr)->Socket;
 			}
 		}
 
@@ -995,6 +1010,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		//NOTE: For UDP Netaddr set the Socket to NULL
 		void AddNetAddr(SOCKET Socket, sockaddr_in Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -1106,6 +1122,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		//NOTE: For UDP Netaddr set the Socket to NULL
 		void AddNetAddr(SOCKET Socket, sockaddr_in6 Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -2003,13 +2020,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					if (ClientCheckPtr->GetClientUniqueID() == Received_ClientUniqueID)
 					{
-						if (!(ClientCheckPtr->TrueForIPv6FalseForIPv4))
+						if (ClientCheckPtr->TrueForIPv6FalseForIPv4)
 						{
-							CompareIPAddr((sockaddr_in*)ClientCheckPtr->IPAddr, ReceivedAddress, IsSuccessful);
+							IsSuccessful = false;
 						}
 						else
 						{
-							IsSuccessful = false;							
+							CompareIPAddr((sockaddr_in*)ClientCheckPtr->IPAddr, ReceivedAddress, IsSuccessful);													
 						}						
 					}
 					else
@@ -2084,7 +2101,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					sendto(UDPServerSocketIPv4, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
+					sendto(UDPServerSocketIPv4, (char*)(DataAndSize.GetData()), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 				}
 			}
 
@@ -2110,7 +2127,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					sendto(UDPServerSocketIPv6, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
+					sendto(UDPServerSocketIPv6, (char*)(DataAndSize.GetData()), DataAndSize.GetDataSize(), 0, (sockaddr*)DestinationAddress, sizeof(*DestinationAddress));
 				}
 			}
 
@@ -2122,7 +2139,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//NOTE:Server = TCP ONly
 		//NOTE:Client = UDP(Connected) And TCP
-		void SendDataTCPUDP(const SOCKET* DestinationSOCKET, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		void SendDataTCPUDP(SOCKET DestinationSOCKET, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2132,7 +2149,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 			else
 			{
-				send(*DestinationSOCKET, DataAndSize.GetData(), DataAndSize.GetDataSize(), 0);
+				send(DestinationSOCKET, (char*)(DataAndSize.GetData()), DataAndSize.GetDataSize(), 0);
 			}
 
 			if (!IsSuccessful)
@@ -2202,7 +2219,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 	public:
 		//For Server to Client
-		void SendData(uint64_t ClientNumber, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool TrueForIPv6FalseForIPv4, bool& IsSuccessful)
+		void SendData(uint64_t ClientNumber, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2219,61 +2236,37 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				}
 				else
 				{
-					if (TrueForIPv6FalseForIPv4)
+					NetAddr* Clientptr = nullptr;
+					ArrayOfClients->GetNetAddr(ClientNumber, &Clientptr, IsSuccessful);
+					if (IsSuccessful)
 					{
-						ClientOrderIPv6* ClientOrderIPv6ptr = nullptr;
-						ClientsList->GetClientIPv6(ClientNumber, &ClientOrderIPv6ptr, IsSuccessful);
-						if (IsSuccessful)
+						if (Clientptr->GetSocket() != NULL)
 						{
-							if (ClientOrderIPv6ptr->ClientSocket != NULL)
+							SendDataTCPUDP(Clientptr->GetSocket(), DataAndSize, IsSuccessful);
+							if (!IsSuccessful)
 							{
-								SendDataTCPUDP(&(ClientOrderIPv6ptr->ClientSocket), DataAndSize, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
-								}
-							}
-							else
-							{
-								SendDataUDP(&(ClientOrderIPv6ptr->ClientAddress), DataAndSize, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error SendDataUDP() Failed in SendData In: NetworkWrapper!");
-								}
+								Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
 							}
 						}
 						else
 						{
-							Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv6() Failed in SendData In: NetworkWrapper!");
+							if (Clientptr->TrueForIPv6FalseForIPv4)
+							{
+								SendDataUDP(&(((NetAddrIPv6*)(Clientptr->IPAddr))->NetAddress), DataAndSize, IsSuccessful);
+							}
+							else
+							{
+								SendDataUDP(&(((NetAddrIPv4*)(Clientptr->IPAddr))->NetAddress), DataAndSize, IsSuccessful);
+							}
+							if (!IsSuccessful)
+							{
+								Essenbp::WriteLogToFile("\n Error SendDataUDP() Failed in SendData In: NetworkWrapper!");
+							}
 						}
 					}
 					else
 					{
-						ClientOrderIPv4* ClientOrderIPv4ptr = nullptr;
-						ClientsList->GetClientIPv4(ClientNumber, &ClientOrderIPv4ptr, IsSuccessful);
-						if (IsSuccessful)
-						{
-							if (ClientOrderIPv4ptr->ClientSocket != NULL)
-							{
-								SendDataTCPUDP(&(ClientOrderIPv4ptr->ClientSocket), DataAndSize, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error SendDataTCPUDP() Failed in SendData In: NetworkWrapper!");
-								}
-							}
-							else
-							{
-								SendDataUDP(&(ClientOrderIPv4ptr->ClientAddress), DataAndSize, IsSuccessful);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error SendDataUDP() Failed in SendData In: NetworkWrapper!");
-								}
-							}
-						}
-						else
-						{
-							Essenbp::WriteLogToFile("\n Error ClientOrderList::GetClientIPv4() Failed in SendData In: NetworkWrapper!");
-						}
+						Essenbp::WriteLogToFile("\n Error ArrayOfClients->GetNetAddr() Failed in SendData In: NetworkWrapper!");
 					}
 				}
 			}
@@ -2306,11 +2299,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					{
 						if (IsClientTrueForTCPFalseForUDP)
 						{
-							SendDataTCPUDP(&TCPServerSocketIPv6, DataAndSize, IsSuccessful);
+							SendDataTCPUDP(TCPServerSocketIPv6, DataAndSize, IsSuccessful);
 						}
 						else
 						{
-							SendDataTCPUDP(&UDPServerSocketIPv6, DataAndSize, IsSuccessful);
+							SendDataTCPUDP(UDPServerSocketIPv6, DataAndSize, IsSuccessful);
 						}
 						
 						if (!IsSuccessful)
@@ -2322,11 +2315,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					{
 						if (IsClientTrueForTCPFalseForUDP)
 						{
-							SendDataTCPUDP(&TCPServerSocketIPv4, DataAndSize, IsSuccessful);
+							SendDataTCPUDP(TCPServerSocketIPv4, DataAndSize, IsSuccessful);
 						}
 						else
 						{
-							SendDataTCPUDP(&UDPServerSocketIPv4, DataAndSize, IsSuccessful);
+							SendDataTCPUDP(UDPServerSocketIPv4, DataAndSize, IsSuccessful);
 						}
 
 						if (!IsSuccessful)
@@ -2340,7 +2333,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 					else
 					{
-						ClientAddSentPackage(DataAndSize.GetData(), DataAndSize.GetDataSize(), IsSuccessful);
+						ClientAddSentPackage((char*)(DataAndSize.GetData()), DataAndSize.GetDataSize(), IsSuccessful);
 						if (!IsSuccessful)
 						{
 							Essenbp::WriteLogToFile("Error ClientAddSentPackage() Failed in ReceiveDataTCPUDPForClient In: NetworkWrapper!");
