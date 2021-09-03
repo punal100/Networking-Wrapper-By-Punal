@@ -1662,9 +1662,11 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//NOTE: Let  k = ((uint16_t*)(ReturnVal->GetData()))[0] Is the TotalNumber Of Subdivided Parts
 		//NOTE: Then the Last Element is ((uint16_t*)(ReturnVal->GetData()))[k], Meaning the Max Size of Each element is 2 Bytes(uint16_t)
 
-		//NOTE: For Creating new element or for Adding Subdivison to Previously Created
+		//NOTE: For Creating new element or for Adding/Changing SubdivisonByte to Previously Created
 		void AddNetworkDataConstructionHelperArrayElement(size_t ElementNumber, uint16_t SubDivisonNumber, uint16_t SubDivisonByte, bool& IsSuccessful)
 		{
+			IsSuccessful = false;
+
 			if (!IsConstructionSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error Calling AddNetworkDataConstructionHelperArrayElement Without Constructing the struct In: NetworkWrapper!\n");
@@ -1672,72 +1674,120 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			else
 			{
 				Essenbp::UnknownDataAndSizeStruct* DataHelper = nullptr;
-				if (ElementNumber > NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData())
+				if (ElementNumber == NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData())
 				{
-					if (ElementNumber == NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData())
+					if (SubDivisonNumber > 0)
 					{
-						if (ElementNumber > 0)
+						Essenbp::WriteLogToFile("\n Error SubDivisonNumber Should be 0 when Creating NetworkDataConstructionHelperArrayElement in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
+					}
+					else
+					{
+						if (SubDivisonByte == 0)
 						{
-							NetworkDataConstructionHelperArray.GetData((ElementNumber - 1), &DataHelper, IsSuccessful);
-							if (IsSuccessful)
-							{
-								IsSuccessful = ((((uint16_t*)(DataHelper->GetData()))[0]) > 0);
-								if (!IsSuccessful)
-								{
-									Essenbp::WriteLogToFile("\n Error The Number of SubDivison Bytes is 0 for Element Number " + std::to_string(ElementNumber - 1) + " in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
-								}
-							}
-							else
-							{
-								Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData() Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
-							}
+							Essenbp::WriteLogToFile("\n Error SubDivisonByte should be greater than 0 in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
 						}
 						else
 						{
-							IsSuccessful = true;
-						}
-
-						if (IsSuccessful)
-						{
-							//PENDING
-							NetworkDataConstructionHelperArray.AddElement(IsSuccessful);
-							if (!IsSuccessful)
-							{
-								Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.AddElement() Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
-							}
-							else
+							if (ElementNumber > 0)
 							{
 								NetworkDataConstructionHelperArray.GetData((ElementNumber - 1), &DataHelper, IsSuccessful);
 								if (IsSuccessful)
 								{
-									//CREATE MORE
-									//PENDING
+									IsSuccessful = ((((uint16_t*)(DataHelper->GetData()))[0]) > 0);
+									if (!IsSuccessful)
+									{
+										Essenbp::WriteLogToFile("\n Error The Number of SubDivison Bytes is 0 for Element Number " + std::to_string(ElementNumber - 1) + ", So Add Atleast 1 SubDivisonByte for the Network Data in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+									}
 								}
 								else
 								{
-									Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData() Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
-									NetworkDataConstructionHelperArray.RemoveElement();
+									Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData(" + std::to_string(ElementNumber - 1) + ") Failed in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
 								}
 							}
+							else
+							{
+								IsSuccessful = true;
+							}
 						}
-						
-						
 					}
-					else
+
+					if (IsSuccessful)
 					{
-						Essenbp::WriteLogToFile("\n Error ElementNumber is greater than NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData() in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+						NetworkDataConstructionHelperArray.AddElement(IsSuccessful);
+						if (!IsSuccessful)
+						{
+							Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.AddElement() Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+						}
+						else
+						{
+							NetworkDataConstructionHelperArray.GetData(ElementNumber, &DataHelper, IsSuccessful);
+							if (IsSuccessful)
+							{
+								SubDivisonNumber = 1;//USing it temporarily
+								DataHelper->CopyAndStoreData(&SubDivisonNumber, 2, IsSuccessful, false, false);//  2 Bytes for for Total Number
+								if (!IsSuccessful)
+								{
+									Essenbp::WriteLogToFile("\n DataHelper->CopyAndStoreData(2 Bytes) Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");									
+								}
+								else
+								{
+									DataHelper->CopyAndStoreData(&SubDivisonByte, 2, IsSuccessful, false, true);// And 2 Bytes for the First SubDivison Number...
+									if (!IsSuccessful)
+									{
+										Essenbp::WriteLogToFile("\n DataHelper->CopyAndStoreData(2 Bytes) Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+										NetworkDataConstructionHelperArray.RemoveElement(ElementNumber, IsSuccessful);
+										if (!IsSuccessful)
+										{
+											Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.RemoveElement(" + std::to_string(ElementNumber) + ") Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+										}
+										IsSuccessful = false;
+									}
+								}								
+							}
+							else
+							{
+								Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData() Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+								NetworkDataConstructionHelperArray.RemoveElement(ElementNumber, IsSuccessful);
+								if (!IsSuccessful)
+								{
+									Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.RemoveElement(" + std::to_string(ElementNumber) + ") Failed in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
+								}
+								IsSuccessful = false;
+							}
+						}
 					}
 				}
 				else
 				{
-					NetworkDataConstructionHelperArray.GetData(ElementNumber, &DataHelper, IsSuccessful);
-					if (IsSuccessful)
+					if (ElementNumber > NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData())
 					{
-
+						Essenbp::WriteLogToFile("\n Error ElementNumber is greater than NetworkDataConstructionHelperArray.GetTotalNumberOfUnknownData() in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
 					}
 					else
 					{
-						Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData() Failed in ConvertDataToNetWorkByteOrderBasedOnNetworkDataConstructionHelperArray In: NetworkWrapper!\n");
+						NetworkDataConstructionHelperArray.GetData(ElementNumber, &DataHelper, IsSuccessful);
+						if (IsSuccessful)
+						{
+							if (((((uint16_t*)(DataHelper->GetData()))[0]) > SubDivisonNumber))
+							{
+								//PENDING
+							}
+							else
+							{
+								if (((((uint16_t*)(DataHelper->GetData()))[0]) == SubDivisonNumber))
+								{
+									//PENDING
+								}
+								else
+								{
+									Essenbp::WriteLogToFile("\n Error The " + std::to_string(SubDivisonNumber) + " is Greater Than The Total Number Of SubDivisons" + std::to_string((((uint16_t*)(DataHelper->GetData()))[0])) + " SubDivisonNumber Should Be Less(When Changing) than or Equal(When Adding One more) to Total Number Of Subdivison for the Network Data in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
+								}
+							}
+						}
+						else
+						{
+							Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData() Failed in ConvertDataToNetWorkByteOrderBasedOnNetworkDataConstructionHelperArray In: NetworkWrapper!\n");
+						}
 					}
 				}
 			}
