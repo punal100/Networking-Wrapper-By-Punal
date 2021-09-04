@@ -270,6 +270,48 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		void GetSentPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetSentPackage Without Constructing the struct In: NetAddrIPv4!\n");
+			}
+			else
+			{
+				SentPackets.GetData(PacketNumber, ReturnData, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error SentPackets.GetData(" + std::to_string(PacketNumber) + ") Failed in GetSentPackage In : NetAddrIPv4!\n");
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error GetSentPackage() Failed In: NetAddrIPv4!");
+			}
+		}
+
+		void GetReceivedPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetReceivedPackage Without Constructing the struct In: NetAddrIPv4!\n");
+			}
+			else
+			{
+				ReceivedPackets.GetData(PacketNumber, ReturnData, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ReceivedPackets.GetData(" + std::to_string(PacketNumber) + ") Failed in GetReceivedPackage In : NetAddrIPv4!\n");
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error GetReceivedPackage() Failed In: NetAddrIPv4!");
+			}
+		}
+
 		uint64_t GetClientUniqueID()
 		{
 			return ClientUniqueID;
@@ -409,6 +451,48 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddrIPv6!");
+			}
+		}
+
+		void GetSentPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetSentPackage Without Constructing the struct In: NetAddrIPv6!\n");
+			}
+			else
+			{
+				SentPackets.GetData(PacketNumber, ReturnData, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error SentPackets.GetData(" + std::to_string(PacketNumber) + ") Failed in GetSentPackage In : NetAddrIPv6!\n");
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error GetSentPackage() Failed In: NetAddrIPv6!");
+			}
+		}
+
+		void GetReceivedPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetReceivedPackage Without Constructing the struct In: NetAddrIPv6!\n");
+			}
+			else
+			{
+				ReceivedPackets.GetData(PacketNumber, ReturnData, IsSuccessful);
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error ReceivedPackets.GetData(" + std::to_string(PacketNumber) + ") Failed in GetReceivedPackage In : NetAddrIPv6!\n");
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error GetReceivedPackage() Failed In: NetAddrIPv6!");
 			}
 		}
 
@@ -795,6 +879,58 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				if (!IsSuccessful)
 				{
 					Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		void GetSentPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetSentPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					((NetAddrIPv6*)IPAddr)->GetSentPackage(PacketNumber, ReturnData, IsSuccessful);
+				}
+				else
+				{
+					((NetAddrIPv4*)IPAddr)->GetSentPackage(PacketNumber, ReturnData, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error GetSentPackage() Failed In: NetAddr!");
+				}
+			}
+		}
+
+		void GetReceivedPackage(uint16_t PacketNumber, Essenbp::UnknownDataAndSizeStruct** ReturnData, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling GetReceivedPackage Without Constructing the struct In: NetAddr!\n");
+			}
+			else
+			{
+				if (TrueForIPv6FalseForIPv4)
+				{
+					((NetAddrIPv6*)IPAddr)->GetReceivedPackage(PacketNumber, ReturnData, IsSuccessful);
+				}
+				else
+				{
+					((NetAddrIPv4*)IPAddr)->GetReceivedPackage(PacketNumber, ReturnData, IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error GetReceivedPackage() Failed In: NetAddr!");
 				}
 			}
 		}
@@ -1625,6 +1761,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		None //Select None If Not needed
 	};
 
+	typedef void (*NetworkWrapperCommandFunction)(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr);
+
 	//NOTE: IPv4 List And IPv6 List both has its own client Numbers, Adding Client to IPv4 will not Increase the List of IPv6 and vice-versa
 	struct NetworkWrapper
 	{
@@ -1667,10 +1805,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//NOTE: This Is Only  For Client
 		NetAddr* ThisClient = nullptr;
 
+		//NOTE: This is where Custom Code goes into(Similar to Event Dispatcher)
+		//NOTE: Example Can Be found Below Titled as /*NetworkWrapper Command Number and It's Functions List*/
+		NetworkWrapperCommandFunction* ServerCommandFunctionArray;//NOTE: The Function is of Format = void (Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
+		NetworkWrapperCommandFunction* ClientCommandFunctionArray;//NOTE: The Function is of Format = void (Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
+
 		//NOTE: This is used to Subdivide received Data Into Multiple Parts(1,2,3,4,5,...,m Bytes) for processing(If the system is in Little-Endian each subdivided part it reversed)
 		Essenbp::ArrayOfUnknownDataAndSize NetworkDataConstructionHelperArray;//NOTE: This is not to be directly used...
 		//NOTE: 'n' referts to the number of Types of Received Data Present 
-		//NOTE: 'n' = 0 is Reserved it Reverses (8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Command, 2 Byte Sent/Received Packet Number)
+		//NOTE: 'n' = 0 is Reserved it Reverses (8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Sent/Received Packet Number, 2 Byte Command)
 		//NOTE: 'n' = 0 Is for Header Information specific for this NetworkWrapper(NW_P)
 		//NOTE: for 'n' from 1 to n(number) will be dedicated for other inputted commands
 		//NOTE:	Example: NetworkDataConstructionHelperArray.GetData('n', &ReturnVal, IsSuccessful),
@@ -1841,7 +1984,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				NetworkDataConstructionHelperArray.RemoveElement(ElementNumber, IsSuccessful);
 				if(!IsSuccessful)
 				{
-					Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.GetData(" + std::to_string(ElementNumber - 1) + ") Failed in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
+					Essenbp::WriteLogToFile("\n Error NetworkDataConstructionHelperArray.RemoveElement(" + std::to_string(ElementNumber - 1) + ") Failed in AddNetworkDataConstructionHelperArrayElement In : NetworkWrapper!\n");
 				}
 			}
 
@@ -1932,6 +2075,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//PENDING add Atomic Bool for this
+		//NOTE: 2 Byte Command And Remaining Data //NOTE:8 Byte Client Number And Client Unique Number should not be Added here since it is constant...
+		//NOTE: DataSize = 2 Byte + Remaining Data size
 		void ClientAddSentPackage(char* Data, size_t DataSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -1964,7 +2109,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//PENDING add Atomic Bool for this
-		//NOTE:2 Byte SizeOfData, 2 Byte Command, //NOTE:8 Byte Client Number And Client Unique Number should not be Added here since it is constant...
+		//NOTE: 2 Byte Command And Remaining Data //NOTE:8 Byte Client Number And Client Unique Number should not be Added here since it is constant...
+		//NOTE: DataSize = 2 Byte + Remaining Data size
 		void ClientAddReceivedPackage(char* Data, size_t DataSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
@@ -2360,14 +2506,14 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//														/*Server*/
 		/*
 		* 0.) Connect to Server / Disconnect from Server Confirmation
-		* 1.) Normal Passage Of Data(+ 2 Bytes Command)
+		* 1.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
 		*/
 		//
 		//
 		//														/*CLIENT*/
 		/*
 		* 0.) Connect to Server / Disconnect from Server Request/Confirmation
-		* 1.) Normal Passage Of Data(+ 2 Bytes Command)
+		* 1.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
 		*/
 		/****************************************************************************************************************************/
 							
@@ -2375,7 +2521,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		/****************************************************************************************************************************///PENDING
 		//													/*Server*/
 		//Command = 0, Verify Connection of Client to Server / Disconnect Client from Server
-		void ServerSideConnectionDisconnectionConfirmationTCP(SOCKET ClientSocket, bool& IsSuccessful, bool IsInitialJoin = false, uint8_t MaxVerificationTries = 2)
+		/*void ServerSideConnectionDisconnectionConfirmationTCP(SOCKET ClientSocket, bool& IsSuccessful, bool IsInitialJoin = false, uint8_t MaxVerificationTries = 2)
 		{
 			IsSuccessful = false;
 
@@ -2745,8 +2891,31 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 				}
 			}
-		}
+		}*/	
 
+		//NOTE: Use this as an Example to Create 
+		void ServerSideConnectionDisconnectionConfirmation(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
+		{
+			if (DataAndSize == nullptr)
+			{
+				Essenbp::WriteLogToFile("\n Error DataAndSize is nullptr in ServerSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (ArgNetAddr == nullptr)
+				{
+					Essenbp::WriteLogToFile("\n Error ArgNetAddr is nullptr in ServerSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+				}
+				else
+				{
+					//PENDING
+					//ACTUAL CODE STARTS HERE
+				}
+			}
+		}
+		
+
+	
 		//Command = 1, Normal Passage Of Data(Total Data Size = Data Size + 2 Bytes Command)
 		//PENDING
 
