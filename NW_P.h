@@ -1762,6 +1762,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	};
 
 	typedef void (*NetworkWrapperCommandFunction)(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr);
+	#define AREA(l, b) (l * b)
+	#define NetworkCommandSubSize(DataHolder, Element) (((uint16_t*)(DataHelper->GetData()))[Element])
+	#define NavigateDataByByte(DataHolder, Number) (((char*)(DataHolder->GetData())) + Number)
 
 	//NOTE: IPv4 List And IPv6 List both has its own client Numbers, Adding Client to IPv4 will not Increase the List of IPv6 and vice-versa
 	struct NetworkWrapper
@@ -1810,7 +1813,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		NetworkWrapperCommandFunction* ServerCommandFunctionArray;//NOTE: The Function is of Format = void (Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
 		NetworkWrapperCommandFunction* ClientCommandFunctionArray;//NOTE: The Function is of Format = void (Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
 
-		//NOTE: This is used to Subdivide received Data Into Multiple Parts(1,2,3,4,5,...,m Bytes) for processing(If the system is in Little-Endian each subdivided part it reversed)
+		//NOTE: This is used to Subdivide Raw(Data To Send)/Received(Received Data) Data Into Multiple Parts(1,2,3,4,5,...,m Bytes) for processing(If the system is in Little-Endian each subdivided part it reversed) otherwise nothing is done
 		Essenbp::ArrayOfUnknownDataAndSize NetworkDataConstructionHelperArray;//NOTE: This is not to be directly used...
 		//NOTE: 'n' referts to the number of Types of Received Data Present 
 		//NOTE: 'n' = 0 is Reserved it Reverses (8 Byte ClientNumber, 8 Byte Client Unique ID, 2 Byte SizeOfData, 2 Byte Sent/Received Packet Number, 2 Byte Command)
@@ -1853,7 +1856,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 								NetworkDataConstructionHelperArray.GetData((ElementNumber - 1), &DataHelper, IsSuccessful);
 								if (IsSuccessful)
 								{
-									IsSuccessful = ((((uint16_t*)(DataHelper->GetData()))[0]) > 0);
+									IsSuccessful = (NetworkCommandSubSize(DataHelper,0) > 0);
 									if (!IsSuccessful)
 									{
 										Essenbp::WriteLogToFile("\n Error The Number of SubDivison Bytes is 0 for Element Number " + std::to_string(ElementNumber - 1) + ", So Add Atleast 1 SubDivisonByte for the Network Data in AddNetworkDataConstructionHelperArrayElement In: NetworkWrapper!\n");
@@ -1932,13 +1935,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						NetworkDataConstructionHelperArray.GetData(ElementNumber, &DataHelper, IsSuccessful);
 						if (IsSuccessful)
 						{
-							if (((((uint16_t*)(DataHelper->GetData()))[0]) > SubDivisonNumber))
+							if ((NetworkCommandSubSize(DataHelper, 0) > SubDivisonNumber))
 							{
-								(((uint16_t*)(DataHelper->GetData()))[(SubDivisonNumber + 1)]) = SubDivisonByte;
+								NetworkCommandSubSize(DataHelper, (SubDivisonNumber + 1)) = SubDivisonByte;
 							}
 							else
 							{
-								if (((((uint16_t*)(DataHelper->GetData()))[0]) == SubDivisonNumber))
+								if ((NetworkCommandSubSize(DataHelper, 0) == SubDivisonNumber))
 								{
 									DataHelper->CopyAndStoreData(&SubDivisonByte, 2, IsSuccessful, false, true);
 									if (!IsSuccessful)
@@ -1947,7 +1950,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 									}
 									else
 									{
-										(((uint16_t*)(DataHelper->GetData()))[0]) = (((uint16_t*)(DataHelper->GetData()))[0]) + 1;
+										NetworkCommandSubSize(DataHelper, 0) = (NetworkCommandSubSize(DataHelper, 0) + 1);
 									}
 								}
 								else
@@ -1998,13 +2001,13 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		{
 			IsSuccessful = false;
 
-			if (IsLittleEndian)
+			if (SizeOfData == 0)
 			{
-				if (SizeOfData == 0)
-				{
-					Essenbp::WriteLogToFile("\n Error SizeOfData is 0 in ConvertDataToNetWorkByteOrder In: NetworkWrapper!\n");
-				}
-				else
+				Essenbp::WriteLogToFile("\n Error SizeOfData is 0 in ConvertDataToNetWorkByteOrder In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (IsLittleEndian)
 				{
 					Essenbp::ReverseDataOrder(Data, 0, SizeOfData - 1, IsSuccessful);
 					if (!IsSuccessful)
@@ -2012,10 +2015,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						Essenbp::WriteLogToFile("\n Error Essenbp::ReverseDataOrder() Failed in ConvertDataToNetWorkByteOrder In: NetworkWrapper!");
 					}
 				}
-			}
-			else
-			{
-				IsSuccessful = true;
+				else
+				{
+					IsSuccessful = true;
+				}
 			}
 
 			if (!IsSuccessful)
@@ -2044,17 +2047,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 						if (IsSuccessful)
 						{
 							uint64_t CurrentByte = 0;
-							uint16_t TotalNumberOfSubdividedParts = ((uint16_t*)(DataHelper->GetData()))[0];
+							uint16_t TotalNumberOfSubdividedParts = NetworkCommandSubSize(DataHelper, 0);
 							uint16_t i = 1;
 							for (i = 1; i < TotalNumberOfSubdividedParts; ++i)
 							{
-								ConvertDataToNetWorkByteOrder(((char*)Data + CurrentByte), ((uint16_t*)(DataHelper->GetData()))[i], IsSuccessful);//Impossible to Fail So no need for fail check here
-								CurrentByte = CurrentByte + ((uint16_t*)(DataHelper->GetData()))[i];
+								ConvertDataToNetWorkByteOrder(((char*)Data + CurrentByte), NetworkCommandSubSize(DataHelper, i), IsSuccessful);//Impossible to Fail So no need for fail check here
+								CurrentByte = CurrentByte + NetworkCommandSubSize(DataHelper, i);
 							}
 							//NOTE: Since [0] is Total Number Of Subdivied Parts, then [1] to [TotalNumberOfSubdividedParts] would be the Last Element
 							//NOTE: Doing this to avoid Buffer Overflow(Very unlikely but still possible)
-							ConvertDataToNetWorkByteOrder(((char*)Data + CurrentByte), ((uint16_t*)(DataHelper->GetData()))[i], IsSuccessful);//Impossible to Fail So no need for fail check here
-							CurrentByte = CurrentByte + ((uint16_t*)(DataHelper->GetData()))[i];
+							ConvertDataToNetWorkByteOrder(((char*)Data + CurrentByte), NetworkCommandSubSize(DataHelper, i), IsSuccessful);//Impossible to Fail So no need for fail check here
+							CurrentByte = CurrentByte + NetworkCommandSubSize(DataHelper, i);
 						}
 						else
 						{
@@ -2071,6 +2074,46 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			if (!IsSuccessful)
 			{
 				Essenbp::WriteLogToFile("\n Error ConvertDataBasedOnNetworkDataConstructionHelperArray() Failed In: NetworkWrapper!");
+			}
+		}
+
+		void SwitchBasedOnCommandFromPackage(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr, bool& IsSuccessful)
+		{
+			IsSuccessful = false;
+
+			if (!IsConstructionSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error Calling SwitchBasedOnCommandFromPackage Without Constructing the struct In: NetworkWrapper!\n");
+			}
+			else
+			{
+				if (DataAndSize == nullptr)
+				{
+					Essenbp::WriteLogToFile("\n Error DataAndSize is nullptr in SwitchBasedOnCommandFromPackage In: NetworkWrapper!\n");
+				}
+				else
+				{
+					if (ArgNetAddr == nullptr)
+					{
+						Essenbp::WriteLogToFile("\n Error ArgNetAddr is nullptr in SwitchBasedOnCommandFromPackage In: NetworkWrapper!\n");
+					}
+					else
+					{
+						if (DataAndSize->GetDataSize() < 22)
+						{
+							Essenbp::WriteLogToFile("\n Error DataAndSize->GetDataSize() is Less than 22 Bytes(Header Size) in SwitchBasedOnCommandFromPackage In: NetworkWrapper!\n");
+						}
+						else
+						{
+							NavigateDataByByte(DataAndSize,)//PENDING
+						}
+					}
+				}
+			}
+
+			if (!IsSuccessful)
+			{
+				Essenbp::WriteLogToFile("\n Error SwitchBasedOnCommandFromPackage() Failed In: NetworkWrapper!");
 			}
 		}
 
@@ -2893,25 +2936,22 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}*/	
 
-		//NOTE: Use this as an Example to Create 
+		//NOTE: Use this as an Example to Create More ServerCommandFunctionArray
+		//NOTE: The Data Should be Reversed using NetworkDataConstructionHelperArray[CommandNumber]
 		void ServerSideConnectionDisconnectionConfirmation(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
 		{
-			if (DataAndSize == nullptr)
+			//if ((uint64_t*)(((char*)(DataAndSize->GetData())) + 0) == 0)
+			if(((uint64_t*)(NavigateDataByByte(DataAndSize, 0))) == 0)//Check if the ClientNumber is 0 or not, if it is 0 it means a New client wants to connect, if not then the current client wants to disconnect
 			{
-				Essenbp::WriteLogToFile("\n Error DataAndSize is nullptr in ServerSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+				//PENDING
 			}
-			else
+			else//This means Current Client wants to disconnect
 			{
-				if (ArgNetAddr == nullptr)
-				{
-					Essenbp::WriteLogToFile("\n Error ArgNetAddr is nullptr in ServerSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
-				}
-				else
-				{
-					//PENDING
-					//ACTUAL CODE STARTS HERE
-				}
+
 			}
+			NetworkCommandSubSize(DataHelper, i);
+			//PENDING
+			//ACTUAL CODE STARTS HERE				
 		}
 		
 
