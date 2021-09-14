@@ -152,15 +152,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 	}
 
+	//PENDING change Variable(ArgVariable) to Variable = ArgVariable;
+
 	//NOTE: Use NetAddr Struct Instead of NetAddrIPv4/6
 	struct NetAddrIPv4
 	{
 	public:
 		uint64_t ClientUniqueID = 0;//PENDING This should be changed Every Specified Minutes For Security Purposes...
 
-		const SOCKET Socket;
-		const uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
-		const sockaddr_in NetAddress;
+		SOCKET Socket;
+		uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
+		sockaddr_in NetAddress;
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
@@ -342,9 +344,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	public:
 		uint64_t ClientUniqueID = 0;//This should be changed Every Specified Minutes For Security Purposes...
 
-		const SOCKET Socket;
-		const uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
-		const sockaddr_in6 NetAddress;
+		SOCKET Socket;
+		uint64_t UniqueNumber;//Number = 0 => Server, Number > 0 => Client //PENDING Modify this with functions
+		sockaddr_in6 NetAddress;
 		const uint16_t SentPacketsArchiveSize;
 		const uint16_t ReceivedPacketsArchiveSize;
 
@@ -526,8 +528,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	struct Sole_NetAddr
 	{
 	public:
-		const bool TrueForIPv6FalseForIPv4;
-		const void* IPAddr;
+		bool TrueForIPv6FalseForIPv4;
+		void* IPAddr;
 		void* CustomStructOrClassptr = nullptr;
 		//void (*CustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful) = nullptr;//Not Needed 
 		void (*CustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr) = nullptr;
@@ -740,9 +742,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 	struct NetAddr
 	{
 	public:
-		const bool TrueForIPv6FalseForIPv4;
-		const void* IPAddr;
+		bool TrueForIPv6FalseForIPv4;
+		void* IPAddr;
 		void* CustomStructOrClassptr = nullptr;
+		uint64_t LastGetAddTime = 0;// In Seconds
 
 		bool IsConstructionSuccessful;
 
@@ -754,6 +757,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			IsConstructionSuccessful = false;
 
 			CustomStructOrClassptr = nullptr;
+			LastGetAddTime = 0;
 
 			if (IPAddr != nullptr)
 			{
@@ -797,6 +801,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			IsConstructionSuccessful = false;
 
 			CustomStructOrClassptr = nullptr;
+			LastGetAddTime = 0;
 
 			if (IPAddr != nullptr)
 			{
@@ -855,6 +860,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					Essenbp::WriteLogToFile("\n Error AddSentPackage() Failed In: NetAddr!");
 				}
+				else
+				{
+					LastGetAddTime =  Essenbp::TimeSinceEpochInSecond();
+				}
 			}
 		}
 
@@ -880,6 +889,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				if (!IsSuccessful)
 				{
 					Essenbp::WriteLogToFile("\n Error AddReceivedPackage() Failed In: NetAddr!");
+				}
+				else
+				{
+					LastGetAddTime = Essenbp::TimeSinceEpochInSecond();
 				}
 			}
 		}
@@ -907,6 +920,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				{
 					Essenbp::WriteLogToFile("\n Error GetSentPackage() Failed In: NetAddr!");
 				}
+				else
+				{
+					LastGetAddTime = Essenbp::TimeSinceEpochInSecond();
+				}
 			}
 		}
 
@@ -932,6 +949,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				if (!IsSuccessful)
 				{
 					Essenbp::WriteLogToFile("\n Error GetReceivedPackage() Failed In: NetAddr!");
+				}
+				else
+				{
+					LastGetAddTime = Essenbp::TimeSinceEpochInSecond();
 				}
 			}
 		}
@@ -1147,8 +1168,9 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 			}
 		}
 
+		//PENDING SET RETURN VALUE FOR THIS VERY IMPORTANT
 		//NOTE: For UDP Netaddr set the Socket to NULL
-		void AddNetAddr(SOCKET Socket, sockaddr_in Address, bool& IsSuccessful)
+		uint64_t AddNetAddr(SOCKET Socket, sockaddr_in Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -1260,7 +1282,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		}
 
 		//NOTE: For UDP Netaddr set the Socket to NULL
-		void AddNetAddr(SOCKET Socket, sockaddr_in6 Address, bool& IsSuccessful)
+		uint64_t AddNetAddr(SOCKET Socket, sockaddr_in6 Address, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -1805,6 +1827,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 		//NOTE: This is Only For Server
 		NetAddrArray* ArrayOfClients = nullptr;//						//NOTE: This is used by Server for List of Clients Connected
+		NetAddrArray* ArrayOfAwaitingConnection = nullptr;//			//NOTE: This is used by Server for List of Awaiting Connections
 
 		//NOTE: This Is Only  For Client
 		NetAddr* ThisClient = nullptr;
@@ -2465,7 +2488,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 	public:
 		//For Server to Client
-		void SendData(uint64_t ClientNumber, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
+		//NOTE: For TrueForConnectedClientFalseForAwaitingConnection, True when the Client is Fully Connected, False when the Client is Still in the process of Connecting
+		void SendData(bool TrueForConnectedClientFalseForAwaitingConnection, uint64_t ClientNumber, Essenbp::UnknownDataAndSizeStruct& DataAndSize, bool& IsSuccessful)
 		{
 			IsSuccessful = false;
 
@@ -2483,7 +2507,15 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 				else
 				{
 					NetAddr* Clientptr = nullptr;
-					ArrayOfClients->GetNetAddr(ClientNumber, &Clientptr, IsSuccessful);
+					if (TrueForConnectedClientFalseForAwaitingConnection)
+					{
+						ArrayOfClients->GetNetAddr(ClientNumber, &Clientptr, IsSuccessful);
+					}
+					else
+					{
+						ArrayOfAwaitingConnection->GetNetAddr(ClientNumber, &Clientptr, IsSuccessful);
+					}
+					
 					if (IsSuccessful)
 					{
 						if (Clientptr->GetSocket() != NULL)
@@ -2529,7 +2561,7 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 					}
 					else
 					{
-						Essenbp::WriteLogToFile("\n Error ArrayOfClients->GetNetAddr() Failed in SendData In: NetworkWrapper!");
+						Essenbp::WriteLogToFile("\n Error NetAddrArray::GetNetAddr() Failed in SendData In: NetworkWrapper!");
 					}
 				}
 			}
@@ -2630,15 +2662,17 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//
 		//														/*Server*/
 		/*
-		* 0.) Connect to Server / Disconnect from Server Confirmation
-		* 1.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
+		* 0.) Connect to Server Initial/Confirmation
+		* 1.) Disconnection Initial/Confirmation
+		* //2.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
 		*/
 		//
 		//
 		//														/*CLIENT*/
 		/*
-		* 0.) Connect to Server / Disconnect from Server Request/Confirmation
-		* 1.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
+		* 0.) Connect to Server Initial/Confirmation
+		* 1.) Disconnection Intial/Confirmation
+		* //1.) Normal Passage Of Data(+ 2 Bytes Command)//PENDING
 		*/
 		/****************************************************************************************************************************/
 							
@@ -3022,10 +3056,31 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		//NOTE: The Data Should be Reversed using NetworkDataConstructionHelperArray[CommandNumber]
 		void ServerSideConnectionDisconnectionConfirmation(Essenbp::UnknownDataAndSizeStruct* DataAndSize, NetAddr* ArgNetAddr)
 		{
+			//PENDING REVAMP THIS
+			bool IsSuccessful = false;
 			//if ((uint64_t*)(((char*)(DataAndSize->GetData())) + 0) == 0)
-			if(((uint64_t*)(NavigateDataByByte(DataAndSize, 0))) == 0)//Check if the ClientNumber is 0 or not, if it is 0 it means a New client wants to connect, if not then the current client wants to disconnect
+			if(((uint64_t*)(NavigateDataByByte(DataAndSize, 0))) == 0)//Check if the ClientNumber is 0 or not, if it is 0 it means a New client wants to connect, If not then the Client is In Pending List(Confirmation Stage)
 			{
 				//PENDING
+				if (ArgNetAddr->TrueForIPv6FalseForIPv4)
+				{
+					ArrayOfAwaitingConnection->AddNetAddr(ArgNetAddr->GetSocket(), *((sockaddr_in6*)(ArgNetAddr->IPAddr)), IsSuccessful);
+				}
+				else
+				{
+					ArrayOfAwaitingConnection->AddNetAddr(ArgNetAddr->GetSocket(), *((sockaddr_in*)(ArgNetAddr->IPAddr)), IsSuccessful);
+				}
+
+				if (!IsSuccessful)
+				{
+					Essenbp::WriteLogToFile("\n Error NetAddrArray::AddNetAddr() Failed in ServerSideConnectionDisconnectionConfirmation In: NetworkWrapper!\n");
+				}
+				else
+				{
+					SendData(false, )
+					//PENDING
+				}
+				//PENDING NOW SEND THIS TO THE CLIENT 
 			}
 			else//This means Current Client wants to disconnect
 			{
