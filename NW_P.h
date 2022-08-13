@@ -154,6 +154,10 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 
 	//PENDING change Variable(ArgVariable) to Variable = ArgVariable;
 
+	//TODO MAKE A COMMON CLASS! of this NetAddrIPv4 And NetAddrIPv6...
+	//TODO Both These Struct Share Alost The Same Stuff...
+	//THEN WHY ARE THERE TWO OF THESE SAME THING, WHAT WAS I EVEN THINKING WHEN I WROTE THIS PIECE OF REDUNDANCY!
+
 	//NOTE: Use NetAddr Struct Instead of NetAddrIPv4/6
 	struct NetAddrIPv4
 	{
@@ -533,6 +537,8 @@ namespace NW_P//OpenCL Wrapper By Punal Manalan
 		void* CustomStructOrClassptr = nullptr;
 		//void (*CustomStructOrClass_Constructorfunctionptr)(void** PtrToCustomStructOrClassptr, bool& IsSuccessful) = nullptr;//Not Needed 
 		void (*CustomStructOrClass_Destructorfunctionptr)(void** PtrToCustomStructOrClassptr) = nullptr;
+		//TODO instead of Void type Use a Common Type like "NetClass" or anything
+		//TODO Remove this Destructor Thing Seems Redundant when "NetClass" Is there
 
 		bool IsConstructionSuccessful;
 
